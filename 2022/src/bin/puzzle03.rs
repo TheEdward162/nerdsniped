@@ -5,12 +5,12 @@ use anyhow::Context;
 use aoc2022 as base;
 
 fn priority(item: char) -> anyhow::Result<u32> {
-    anyhow::ensure!((item as u32) < 256, "Invalid item value");
+	anyhow::ensure!((item as u32) < 256, "Invalid item value");
 
 	if item >= 'a' && item <= 'z' {
 		Ok(item as u32 - 'a' as u32 + 1)
 	} else if item >= 'A' && item <= 'Z' {
-        Ok(item as u32 - 'A' as u32 + 27)
+		Ok(item as u32 - 'A' as u32 + 27)
 	} else {
 		anyhow::bail!("Invalid item {}", item)
 	}
@@ -42,11 +42,11 @@ fn main() -> anyhow::Result<()> {
 	}
 	println!("Total priority: {}", total_priority);
 
-    let mut total_trio_priority = 0;
-    for group in all_rucksacks.chunks(3) {
-        let intersection = group[0].intersection(&group[1]).filter(|item| group[2].contains(item)).copied().nth(0).expect("group intersection is empty");
-        total_trio_priority += priority(intersection)?;
-    }
+	let mut total_trio_priority = 0;
+	for group in all_rucksacks.chunks(3) {
+		let intersection = group[0].intersection(&group[1]).filter(|item| group[2].contains(item)).copied().nth(0).expect("group intersection is empty");
+		total_trio_priority += priority(intersection)?;
+	}
 	println!("Total trio priority: {}", total_trio_priority);
 
 	Ok(())
