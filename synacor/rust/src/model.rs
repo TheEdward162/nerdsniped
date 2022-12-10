@@ -128,7 +128,7 @@ define_parseable! {
 	hint = "register"
 }
 
-#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, serde::Serialize, serde::Deserialize)]
 pub struct Number(u16);
 impl TryFrom<Word> for Number {
 	type Error = anyhow::Error;
@@ -204,19 +204,31 @@ impl fmt::Display for Number {
 		write!(f, "{}", self.0)
 	}
 }
+impl fmt::Debug for Number {
+	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+		write!(f, "0x{:0>4X}", self.0)
+	}
+}
 
-#[derive(Debug)]
 pub enum ArgumentValue {
-	Number(Number),
-	RegisterId(RegisterId)
+	Literal(Number),
+	Register(RegisterId)
 }
 impl TryFrom<Word> for ArgumentValue {
 	type Error = anyhow::Error;
 
 	fn try_from(value: Word) -> Result<Self, Self::Error> {
-		Number::try_from(value).map(Self::Number).or(
-			RegisterId::try_from(value).map(Self::RegisterId)
-		).map_err(|_| anyhow::anyhow!("Invalid argument value: neither Number nor RegisterId"))
+		Number::try_from(value).map(Self::Literal).or(
+			RegisterId::try_from(value).map(Self::Register)
+		).map_err(|_| anyhow::anyhow!("Invalid argument value: neither Literal nor Register"))
+	}
+}
+impl fmt::Debug for ArgumentValue {
+	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+		match self {
+			Self::Literal(num) => write!(f, "lit {:?}", num),
+			Self::Register(reg) => write!(f, "reg {:?}", reg)
+		}
 	}
 }
 
