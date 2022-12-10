@@ -2,7 +2,8 @@ use std::{io::Read, str::FromStr, fmt::Debug};
 
 use anyhow::Context;
 
-use aoc2022 as base;
+use aoc_commons as base;
+use base::{anyhow, log};
 
 struct MoveCommand {
 	count: usize,

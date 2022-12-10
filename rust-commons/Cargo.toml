@@ -1,0 +1,10 @@
+[package]
+name = "aoc_commons"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1"
+log = "0.4"
+
+edwardium_logger = "1.2.2"

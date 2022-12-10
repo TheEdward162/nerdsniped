@@ -2,6 +2,9 @@ use std::{path::{PathBuf, Path}, io::Read};
 
 use anyhow::Context;
 
+pub use anyhow;
+pub use log;
+
 pub fn setup_logger(level: log::Level) -> anyhow::Result<()> {
 	use edwardium_logger::{
 		Logger,
@@ -47,7 +50,7 @@ pub fn parse_cli() -> anyhow::Result<Cli> {
 		}
 
 		Ok(Cli {
-			input: input.unwrap(),
+			input: input.context("Missing input file")?,
 			log_level: log_level.unwrap_or(log::Level::Info)
 		})
 }

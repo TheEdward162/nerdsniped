@@ -2,7 +2,8 @@ use std::{io::Read, ops::RangeInclusive};
 
 use anyhow::Context;
 
-use aoc2022 as base;
+use aoc_commons as base;
+use base::anyhow;
 
 fn parse_range(value: &str) -> anyhow::Result<RangeInclusive<u32>> {
 	let (start_str, end_str) = value.split_once("-").context("Failed to split range by -")?;

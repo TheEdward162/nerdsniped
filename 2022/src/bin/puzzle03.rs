@@ -2,7 +2,8 @@ use std::{collections::HashSet, io::Read};
 
 use anyhow::Context;
 
-use aoc2022 as base;
+use aoc_commons as base;
+use base::anyhow;
 
 fn priority(item: char) -> anyhow::Result<u32> {
 	anyhow::ensure!((item as u32) < 256, "Invalid item value");

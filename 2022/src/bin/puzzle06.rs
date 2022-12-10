@@ -2,7 +2,8 @@ use std::{io::Read, collections::HashSet};
 
 use anyhow::Context;
 
-use aoc2022 as base;
+use aoc_commons as base;
+use base::anyhow;
 
 // TODO: Should recollect the input string as [char] to be utf8 correct, but we are assuming ascii
 fn find_start_of(sequence: &[u8], size: usize) -> usize {

@@ -2,7 +2,8 @@ use std::{io::Read, fmt};
 
 use anyhow::Context;
 
-use aoc2022 as base;
+use aoc_commons as base;
+use base::{anyhow, log};
 
 #[derive(Clone, Copy)]
 struct Visibility {

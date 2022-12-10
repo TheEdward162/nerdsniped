@@ -1,0 +1,6 @@
+[workspace]
+members = [
+	"rust-commons",
+	"2022",
+	"synacor/rust"
+]
