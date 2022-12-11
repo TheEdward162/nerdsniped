@@ -3,7 +3,7 @@ use std::{io::Read, str::FromStr, fmt::Debug};
 use anyhow::Context;
 
 use aoc_commons as base;
-use base::{anyhow, log};
+use base::{anyhow, log, macros::FromStrToTryFromAdapter};
 
 struct MoveCommand {
 	count: usize,
@@ -17,16 +17,9 @@ impl FromStr for MoveCommand {
 		let mut it = value.split(' ');
 		match it.next().context("Invalid command")? {
 			"move" => {
-				let tokens = (
-					it.next().context("Expected count argument")?.parse::<usize>().context("Invalid count argument")?,
-					it.next().context("Expected `from` keyword")?,
-					it.next().context("Expected from argument")?.parse::<usize>().context("Invalid from argument")?,
-					it.next().context("Expected `to` keyword")?,
-					it.next().context("Expected to argument")?.parse::<usize>().context("Invalid to argument")?
-				);
-				log::trace!("Move tokens: {:?}", tokens);
+				let (count, from, to) = base::split_match_tokens!(value, ' '; "move", count: FromStrToTryFromAdapter<usize>, "from", from: FromStrToTryFromAdapter<usize>, "to", to: FromStrToTryFromAdapter<usize>)?;
 
-				Ok(Self { count: tokens.0, from: tokens.2, to: tokens.4 })
+				Ok(Self { count: count.0, from: from.0, to: to.0 })
 			}
 			_ => anyhow::bail!("Invalid command")
 		}
