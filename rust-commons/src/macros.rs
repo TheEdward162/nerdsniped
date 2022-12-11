@@ -11,6 +11,17 @@ impl<'a, T: FromStr> TryFrom<&'a str> for FromStrToTryFromAdapter<T> {
 	}
 }
 
+///
+/// 
+/// Usage:
+/// ```
+/// # use aoc_commons::{macros::FromStrToTryFromAdapter, split_match_tokens};
+/// #
+/// let value = "move 5 from 0 to 17";
+/// let (count, from, to) = split_match_tokens!(value, ' '; "move", count: FromStrToTryFromAdapter<usize>, "from", from: FromStrToTryFromAdapter<usize>, "to", to: FromStrToTryFromAdapter<usize>).unwrap();
+/// 
+/// let x: usize = count.0;
+/// ```
 #[macro_export]
 macro_rules! split_match_tokens {
 	(
