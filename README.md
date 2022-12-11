@@ -6,4 +6,4 @@ My Advent of Code solutions.
 
 Language: Rust
 
-Command: `cargo run --bin puzzle05 -- inputs/input05.txt`
+Command: `cargo run --package aoc2022 --bin puzzle01 -- 2022/inputs/input01.txt`
