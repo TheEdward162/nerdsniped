@@ -3,7 +3,7 @@ use std::{
 	ops::{Add, Sub, Mul, Range}
 };
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Point2 {
 	pub x: isize,
 	pub y: isize
@@ -11,6 +11,14 @@ pub struct Point2 {
 impl Point2 {
 	pub const fn new(x: isize, y: isize) -> Self {
 		Self { x, y }
+	}
+
+	pub fn min(self, other: Self) -> Self {
+		Point2 { x: self.x.min(other.x), y: self.y.min(other.y) }
+	}
+
+	pub fn max(self, other: Self) -> Self {
+		Point2 { x: self.x.max(other.x), y: self.y.max(other.y) }
 	}
 }
 impl Add<Self> for Point2 {
@@ -166,7 +174,7 @@ impl<T: fmt::Display> fmt::Display for Grid2<T> {
 	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 		for y in 0 .. self.height() {
 			for x in 0 .. self.width() {
-				write!(f, "{}", self.get(Point2 { x, y }).unwrap())?;
+				write!(f, "{}", self.get_relative(Point2 { x, y }).unwrap())?;
 			}
 			writeln!(f)?;
 		}
