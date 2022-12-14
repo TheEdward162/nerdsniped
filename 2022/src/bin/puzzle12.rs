@@ -3,7 +3,7 @@ use std::{io::Read, collections::VecDeque};
 use anyhow::Context;
 
 use aoc_commons as base;
-use base::{anyhow, log};
+use base::{anyhow, log, geometry::{Grid2, Point2}};
 
 #[derive(Debug, Clone)]
 struct BfsState {
@@ -27,67 +27,19 @@ impl BfsState {
 
 #[derive(Debug)]
 struct BfsStackEntry {
-	pub x: isize,
-	pub y: isize,
+	pub pos: Point2,
 	pub steps: u32
 }
 impl BfsStackEntry {
-	pub fn new_start(x: isize, y: isize) -> Self {
-		Self { x, y, steps: 0 }
+	pub fn new_start(pos: Point2) -> Self {
+		Self { pos, steps: 0 }
 	}
 
 	pub fn next(&self, x: isize, y: isize) -> Self {
 		Self {
-			x: self.x + x,
-			y: self.y + y,
+			pos: self.pos + Point2::new(x, y),
 			steps: self.steps + 1
 		}
-	}
-}
-
-#[derive(Clone)]
-struct Map<T> {
-	cells: Vec<T>,
-	width: usize
-}
-impl<T> Map<T> {
-	pub fn new(cells: Vec<T>, width: usize) -> Self {
-		Self { cells, width }
-	}
-
-	pub fn width(&self) -> isize {
-		self.width as isize
-	}
-
-	pub fn height(&self) -> isize {
-		self.cells.len() as isize / self.width()
-	}
-
-	pub fn index_to_coords(&self, index: usize) -> Option<[isize; 2]> {
-		if index >= self.cells.len() {
-			None
-		} else {
-			let x = index % self.width;
-			let y = index / self.width;
-			Some([x as isize, y as isize])
-		}
-	}
-
-	pub fn get(&self, x: isize, y: isize) -> Option<&T> {
-		if x < 0 || x >= self.width() || y < 0 || y >= self.height() {
-			return None;
-		}
-
-		self.cells.get(x as usize + y as usize * self.width)
-	}
-
-	// Initially copied from puzzle08 but not sure which approach is better
-	pub fn get_mut(&mut self, x: isize, y: isize) -> Option<&mut T> {
-		if x < 0 || x >= self.width() || y < 0 || y >= self.height() {
-			return None;
-		}
-
-		self.cells.get_mut(x as usize + y as usize * self.width)
 	}
 }
 
@@ -99,17 +51,17 @@ fn height_value(height: char) -> anyhow::Result<u8> {
 	)
 }
 
-fn do_search(mut map: Map<BfsState>, start: [isize; 2], end: [isize; 2]) -> anyhow::Result<u32> {
-	log::debug!("Coordinates: {:?} -> {:?}", start, end);
+fn do_search(mut map: Grid2<BfsState>, start: Point2, end: Point2) -> anyhow::Result<u32> {
+	log::debug!("Coordinates: {} -> {}", start, end);
 	
 	let mut bfs_stack = VecDeque::<BfsStackEntry>::new();
-	bfs_stack.push_back(BfsStackEntry::new_start(start[0], start[1]));
+	bfs_stack.push_back(BfsStackEntry::new_start(start));
 
 	while let Some(current) = bfs_stack.pop_front() {
-		let height = match map.get_mut(current.x, current.y) {
+		let height = match map.get_mut(current.pos) {
 			None => None,
 			Some(cell) => if cell.visit(current.steps) {
-				log::trace!("Visited cell ({}, {}) @ {} with {} steps ", current.x, current.y, cell.height, current.steps);
+				log::trace!("Visited cell {} @ {} with {} steps ", current.pos, cell.height, current.steps);
 				Some(cell.height)
 			} else {
 				None
@@ -120,10 +72,10 @@ fn do_search(mut map: Map<BfsState>, start: [isize; 2], end: [isize; 2]) -> anyh
 			macro_rules! evaluate {
 				($x: expr, $y: expr) => {
 					let next = current.next($x, $y);
-					match map.get(next.x, next.y) {
+					match map.get(next.pos) {
 						None => (),
 						Some(next_cell) => {
-							log::trace!("Evaluating ({}, {}) @ {}", next.x, next.y, next_cell.height);
+							log::trace!("Evaluating {} @ {}", next.pos, next_cell.height);
 							if height + 1 >= next_cell.height {
 								bfs_stack.push_back(next);
 							}
@@ -139,7 +91,7 @@ fn do_search(mut map: Map<BfsState>, start: [isize; 2], end: [isize; 2]) -> anyh
 		}
 	}
 
-	let end = map.get(end[0], end[1]).unwrap();
+	let end = map.get(end).unwrap();
 	log::debug!("End: {:?}", end);
 	end.visited_steps.context("Failed to visit end")
 }
@@ -150,7 +102,7 @@ fn main() -> anyhow::Result<()> {
 	let mut input = String::new();
 	file.read_to_string(&mut input).context("Failed to read input file")?;
 
-	let width = input.find('\n').context("Failed to find newline in input")?;
+	let width = input.find('\n').context("Failed to find newline in input")? as isize;
 
 	let mut cells = Vec::<BfsState>::new();
 	let mut start = 0;
@@ -174,16 +126,17 @@ fn main() -> anyhow::Result<()> {
 		}
 	}
 
-	let map = Map::new(cells, width);
+	let map = Grid2::new_width(cells, width)?;
 	let start = map.index_to_coords(start).context("Failed to parse start coordinates")?;
 	let end = map.index_to_coords(end).context("Failed to parse end coordinates")?;
 
 	let mut possible_starts = vec![start];
-	for y in 0 .. map.height() as isize {
-		for x in 0 .. map.width() as isize {
-			match map.get(x, y) {
+	for y in map.y_range() {
+		for x in map.x_range() {
+			let p = Point2::new(x, y);
+			match map.get(p) {
 				Some(cell) if cell.height == 0 => {
-					possible_starts.push([x, y]);
+					possible_starts.push(p);
 				},
 				_ => ()
 			}

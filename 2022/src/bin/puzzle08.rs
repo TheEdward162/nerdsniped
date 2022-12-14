@@ -3,7 +3,7 @@ use std::{io::Read, fmt};
 use anyhow::Context;
 
 use aoc_commons as base;
-use base::{anyhow, log};
+use base::{anyhow, log, geometry::{Grid2, Point2}};
 
 #[derive(Clone, Copy)]
 struct Visibility {
@@ -32,74 +32,17 @@ impl fmt::Debug for Visibility {
 	}
 }
 
-struct Map<T> {
-	trees: Vec<T>,
-	width: usize
-}
-impl<T> Map<T> {
-	pub fn new(trees: Vec<T>, width: usize) -> Self {
-		Self { trees, width }
-	}
-
-	pub fn width(&self) -> usize {
-		self.width
-	}
-
-	pub fn height(&self) -> usize {
-		self.trees.len() / self.width
-	}
-
-	pub fn get(&self, x: usize, y: usize) -> Option<&T> {
-		self.trees.get(x + y * self.width)
-	}
-
-	pub fn get_offset(&self, x: isize, y: isize) -> Option<&T> {
-		if x < 0 || (x as usize) >= self.width || y < 0 || (y as usize) >= self.height() {
-			return None;
-		}
-		
-		self.get(x as usize, y as usize)
-	}
-
-	pub fn get_mut(&mut self, x: usize, y: usize) -> Option<&mut T> {
-		if x >= self.width || y >= self.height() {
-			return None;
-		}
-		
-		self.trees.get_mut(x + y * self.width)
-	}
-}
-impl<T: Copy> Map<T> {
-	pub fn new_fill(fill: T, width: usize, height: usize) -> Self {
-		Self::new(vec![fill; width * height], width)
-	}
-}
-impl<T: fmt::Debug> fmt::Debug for Map<T> {
-	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-		for y in 0 .. self.height() {
-			for x in 0 .. self.width {
-				write!(f, "{:?}", self.get(x, y).unwrap())?;
-			}
-			writeln!(f)?;
-		}
-
-		Ok(())
-	}
-}
-
 fn evaluate_visibility(
-	map: &Map<i8>,
-	map_visibility: &mut Map<Visibility>,
-	x: usize,
-	y: usize
+	map: &Grid2<i8>,
+	map_visibility: &mut Grid2<Visibility>,
+	at: Point2
 ) -> anyhow::Result<()> {
 	macro_rules! evaluate {
 		($dir: ident; $x_diff: literal, $y_diff: literal) => {
 			{
-				let sx = (x as isize) + $x_diff;
-				let sy = (y as isize) + $y_diff;
-				map_visibility.get_offset(sx, sy).map(|v| v.$dir).unwrap_or(-1).max(
-					map.get_offset(sx, sy).copied().unwrap_or(-1)
+				let sat = at + Point2::new($x_diff, $y_diff);
+				map_visibility.get(sat).map(|v| v.$dir).unwrap_or(-1).max(
+					map.get(sat).copied().unwrap_or(-1)
 				)
 			}
 		}
@@ -111,13 +54,13 @@ fn evaluate_visibility(
 		right: evaluate!(right; 1, 0),
 		bottom: evaluate!(bottom; 0, 1)
 	};
-	
-	let vis = map_visibility.get_mut(x, y).context("Invalid position to evaluate")?;
+
+	let vis = map_visibility.get_mut(at).context("Invalid position to evaluate")?;
 	let new_vis = vis.min(around);
 
 	log::trace!(
-		"({}, {}): {:?}: {:?} -> {:?}",
-		x, y, around, vis, new_vis
+		"{}: {:?}: {:?} -> {:?}",
+		at, around, vis, new_vis
 	);
 	
 	*vis = new_vis;
@@ -125,18 +68,16 @@ fn evaluate_visibility(
 	Ok(())
 }
 
-fn evaluate_scenic(map: &Map<i8>, x: usize, y: usize) -> anyhow::Result<usize> {
-	let center = *map.get(x, y).context("Invalid center tree")?;
+fn evaluate_scenic(map: &Grid2<i8>, at: Point2) -> anyhow::Result<usize> {
+	let center = *map.get(at).context("Invalid center tree")?;
 	
 	macro_rules! evaluate {
 		($x_diff: literal, $y_diff: literal) => {
 			{
-				let mut i: usize = 1;
+				let mut i: isize = 1;
 				loop {
-					let sx = x as isize + $x_diff * i as isize;
-					let sy = y as isize + $y_diff * i as isize;
-
-					match map.get_offset(sx, sy) {
+					let sat = at + Point2::new($x_diff, $y_diff) * i;
+					match map.get(sat) {
 						None => break i - 1,
 						Some(&tree) if tree >= center => break i,
 						_ => ()
@@ -150,7 +91,7 @@ fn evaluate_scenic(map: &Map<i8>, x: usize, y: usize) -> anyhow::Result<usize> {
 
 	let score = evaluate!(-1, 0) * evaluate!(0, -1) * evaluate!(1, 0) * evaluate!(0, 1);
 
-	Ok(score)
+	Ok(score as usize)
 }
 
 fn main() -> anyhow::Result<()> {
@@ -167,30 +108,32 @@ fn main() -> anyhow::Result<()> {
 		}
 	}
 
-	let map = Map::new(trees, width);
+	let map = Grid2::new_width(trees, width as isize)?;
 	log::debug!("Map:\n{:?}", map);
 	
-	let mut map_visibility = Map::new_fill(Visibility { left: 9, top: 9, right: 9, bottom: 9 }, map.width(), map.height());
-	for y in 0 .. map.height() {
-		for x in 0 .. map.width() {
-			evaluate_visibility(&map, &mut map_visibility, x, y)?;
+	let mut map_visibility = Grid2::new_fill(Visibility { left: 9, top: 9, right: 9, bottom: 9 }, map.boundaries())?;
+	for y in map.y_range() {
+		for x in map.x_range() {
+			evaluate_visibility(&map, &mut map_visibility, Point2::new(x, y))?;
 
 			// mirror vis
-			let mirror_x = map.width() - x - 1;
-			let mirror_y = map.height() - y - 1;
-			evaluate_visibility(&map, &mut map_visibility, mirror_x, mirror_y)?;
+			let b = map.boundaries();
+			evaluate_visibility(&map, &mut map_visibility, Point2::new(
+				b.max.x - x + b.min.x - 1,
+				b.max.y - y + b.min.y - 1
+			))?;
 		}
 	}
 
-	let mut map_visible = Map::new_fill(0, map.width(), map.height());
+	let mut map_visible = Grid2::new_fill(0, map.boundaries())?;
 	let mut total_visible = 0;
-	for y in 0 .. map.height() {
-		for x in 0 .. map.width() {
-			let tree = map.get(x, y).unwrap();
-			let vis = map_visibility.get(x, y).unwrap();
+	for y in map.y_range() {
+		for x in map.x_range() {
+			let tree = map.get(Point2::new(x, y)).unwrap();
+			let vis = map_visibility.get(Point2::new(x, y)).unwrap();
 
 			if *tree > vis.total() {
-				*map_visible.get_mut(x, y).unwrap() = 1;
+				*map_visible.get_mut(Point2::new(x, y)).unwrap() = 1;
 				total_visible += 1;
 			}
 		}
@@ -198,9 +141,9 @@ fn main() -> anyhow::Result<()> {
 	log::debug!("Map visible:\n{:?}", map_visible);
 
 	let mut max_scenic = 0;
-	for y in 0 .. map.height() {
-		for x in 0 .. map.width() {
-			let scenic = evaluate_scenic(&map, x, y)?;
+	for y in map.y_range() {
+		for x in map.x_range() {
+			let scenic = evaluate_scenic(&map, Point2::new(x, y))?;
 
 			if scenic > max_scenic {
 				max_scenic = scenic;

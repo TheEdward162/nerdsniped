@@ -6,6 +6,7 @@ pub use anyhow;
 pub use log;
 
 pub mod macros;
+pub mod geometry;
 
 pub fn setup_logger(level: log::Level) -> anyhow::Result<()> {
 	use edwardium_logger::{
