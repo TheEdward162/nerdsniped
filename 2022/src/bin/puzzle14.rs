@@ -128,21 +128,21 @@ fn main() -> anyhow::Result<()> {
 		lines.push(points);
 	}
 
-	let boundaries = lines.iter().flat_map(|p| p.iter()).fold(
+	let bounding_box = lines.iter().flat_map(|p| p.iter()).fold(
 		Rectangle2 { min: Point2::new(isize::MAX, 0), max: Point2::new(0, 0) }, |acc, p| Rectangle2 {
 			min: Point2::new(acc.min.x.min(p.x), acc.min.y.min(p.y)),
 			max: Point2::new(acc.max.x.max(p.x), acc.max.y.max(p.y))
 		}
 	);
-	let boundaries = Rectangle2 {
-		min: boundaries.min,
-		max: boundaries.max + Point2::new(1, 1),
+	let bounding_box = Rectangle2 {
+		min: bounding_box.min,
+		max: bounding_box.max + Point2::new(1, 1),
 	};
 
 	// part1
 	let b1 = Rectangle2 {
-		min: boundaries.min - Point2::new(1, 0),
-		max: boundaries.max + Point2::new(1, 1)
+		min: bounding_box.min - Point2::new(1, 0),
+		max: bounding_box.max + Point2::new(1, 1)
 	};
 	log::debug!("Boundaries: {:?}", b1);
 
@@ -160,8 +160,8 @@ fn main() -> anyhow::Result<()> {
 
 	// part 2
 	let b2 = Rectangle2 {
-		min: boundaries.min - Point2::new(boundaries.size().y, 0),
-		max: boundaries.max + Point2::new(boundaries.size().y, 2)
+		min: bounding_box.min - Point2::new(bounding_box.size().y, 0),
+		max: bounding_box.max + Point2::new(bounding_box.size().y, 2)
 	};
 	log::debug!("Boundaries: {:?}", b2);
 

@@ -111,13 +111,13 @@ fn main() -> anyhow::Result<()> {
 	let map = Grid2::new_width(trees, width as isize)?;
 	log::debug!("Map:\n{:?}", map);
 	
-	let mut map_visibility = Grid2::new_fill(Visibility { left: 9, top: 9, right: 9, bottom: 9 }, map.boundaries())?;
+	let mut map_visibility = Grid2::new_fill(Visibility { left: 9, top: 9, right: 9, bottom: 9 }, map.bounding_box())?;
 	for y in map.y_range() {
 		for x in map.x_range() {
 			evaluate_visibility(&map, &mut map_visibility, Point2::new(x, y))?;
 
 			// mirror vis
-			let b = map.boundaries();
+			let b = map.bounding_box();
 			evaluate_visibility(&map, &mut map_visibility, Point2::new(
 				b.max.x - x + b.min.x - 1,
 				b.max.y - y + b.min.y - 1
@@ -125,7 +125,7 @@ fn main() -> anyhow::Result<()> {
 		}
 	}
 
-	let mut map_visible = Grid2::new_fill(0, map.boundaries())?;
+	let mut map_visible = Grid2::new_fill(0, map.bounding_box())?;
 	let mut total_visible = 0;
 	for y in map.y_range() {
 		for x in map.x_range() {
