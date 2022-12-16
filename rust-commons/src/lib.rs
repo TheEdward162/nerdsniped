@@ -7,6 +7,8 @@ pub use log;
 
 pub mod macros;
 pub mod geometry;
+pub mod combinatorics;
+pub mod perfect_hash;
 
 pub fn setup_logger(level: log::Level) -> anyhow::Result<()> {
 	use edwardium_logger::{

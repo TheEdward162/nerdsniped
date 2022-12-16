@@ -21,7 +21,7 @@ impl Point2 {
 		Point2 { x: self.x.max(other.x), y: self.y.max(other.y) }
 	}
 
-	pub fn length(self) -> isize {
+	pub fn length_manhattan(self) -> isize {
 		self.x.abs() + self.y.abs()
 	}
 
@@ -180,8 +180,8 @@ impl Circle2 {
 		self.radius
 	}
 
-	pub fn contains(&self, point: Point2) -> bool {
-		(point - self.center).length() <= self.radius
+	pub fn contains_manhattan(&self, point: Point2) -> bool {
+		(point - self.center).length_manhattan() <= self.radius
 	}
 
 	pub fn disk_points(&self) -> impl Iterator<Item = Point2> {

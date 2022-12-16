@@ -25,13 +25,13 @@ fn main() -> anyhow::Result<()> {
 	let mut beacons_and_sensors = HashSet::<Point2>::new();
 	let mut circles = Vec::<Circle2>::new();
 	for line in input.split('\n').filter(|s| !s.is_empty()) {
-		let (sx, sy, bx, by) = base::split_match_tokens!(
-			line, [' ', '=', ',', ':'];
+		let (sx, sy, bx, by) = base::match_tokens!(
+			line.split([' ', '=', ',', ':']).filter(|s| !s.is_empty());
 			"Sensor", "at",
-			"x", sx: FromStrToTryFromAdapter<isize>, "",
-			"y", sy: FromStrToTryFromAdapter<isize>, "",
+			"x", sx: FromStrToTryFromAdapter<isize>,
+			"y", sy: FromStrToTryFromAdapter<isize>,
 			"closest", "beacon", "is", "at",
-			"x", bx: FromStrToTryFromAdapter<isize>, "",
+			"x", bx: FromStrToTryFromAdapter<isize>,
 			"y", by: FromStrToTryFromAdapter<isize>
 		)?;
 
@@ -61,7 +61,7 @@ fn main() -> anyhow::Result<()> {
 	log::debug!("Boundaries: {}", b1);
 	let mut cleared_count = 0;
 	for point in b1.points_iter().filter(|p| !beacons_and_sensors.contains(p)) {
-		if circles.iter().any(|c| c.contains(point)) {
+		if circles.iter().any(|c| c.contains_manhattan(point)) {
 			cleared_count += 1;
 		}
 	}
@@ -91,7 +91,7 @@ fn main() -> anyhow::Result<()> {
 
 			for &point in points1.intersection(&points2) {
 				log::trace!("Scanning point: {}", point);
-				if !circles.iter().any(|c| c.contains(point)) {
+				if !circles.iter().any(|c| c.contains_manhattan(point)) {
 					empty_point = Some(point);
 					break 'toploop;
 				}

@@ -17,7 +17,7 @@ impl FromStr for MoveCommand {
 		let mut it = value.split(' ');
 		match it.next().context("Invalid command")? {
 			"move" => {
-				let (count, from, to) = base::split_match_tokens!(value, ' '; "move", count: FromStrToTryFromAdapter<usize>, "from", from: FromStrToTryFromAdapter<usize>, "to", to: FromStrToTryFromAdapter<usize>)?;
+				let (count, from, to) = base::match_tokens!(value.split(' '); "move", count: FromStrToTryFromAdapter<usize>, "from", from: FromStrToTryFromAdapter<usize>, "to", to: FromStrToTryFromAdapter<usize>)?;
 
 				Ok(Self { count: count.0, from: from.0, to: to.0 })
 			}

@@ -120,7 +120,7 @@ fn main() -> anyhow::Result<()> {
 		let mut points = Vec::new();
 		
 		for point_str in line.split(" -> ") {
-			let (x, y) = base::split_match_tokens!(point_str, ','; x: FromStrToTryFromAdapter<isize>, y: FromStrToTryFromAdapter<isize>)?;
+			let (x, y) = base::match_tokens!(point_str.split(','); x: FromStrToTryFromAdapter<isize>, y: FromStrToTryFromAdapter<isize>)?;
 			points.push(Point2::new(x.0, y.0));
 		}
 

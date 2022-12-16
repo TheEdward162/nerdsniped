@@ -53,7 +53,7 @@ impl<'a> TryFrom<&'a str> for Expression {
 	type Error = anyhow::Error;
 
 	fn try_from(value: &'a str) -> Result<Self, Self::Error> {
-		let (left, operation, right) = base::split_match_tokens!(value, ' '; "new", "=", left: Operand, op: Operation, right: Operand)?;
+		let (left, operation, right) = base::match_tokens!(value.split(' '); "new", "=", left: Operand, op: Operation, right: Operand)?;
 
 		Ok(Self { left, operation, right })
 	}
@@ -92,9 +92,9 @@ impl<'a> TryFrom<&'a InputStructure<'a>> for MonkeyTest {
 		let value_true = value.get("If true").context("Missing If true")?.value;
 		let value_false = value.get("If false").context("Missing If false")?.value;
 
-		let divisible_by = base::split_match_tokens!(value.value, ' '; "divisible", "by", divisible_by: FromStrToTryFromAdapter<WorryLevel>)?.0;
-		let monkey_true = base::split_match_tokens!(value_true, ' '; "throw", "to", "monkey", monkey_true: FromStrToTryFromAdapter<usize>)?.0;
-		let monkey_false = base::split_match_tokens!(value_false, ' '; "throw", "to", "monkey", monkey_false: FromStrToTryFromAdapter<usize>)?.0;
+		let divisible_by = base::match_tokens!(value.value.split(' '); "divisible", "by", divisible_by: FromStrToTryFromAdapter<WorryLevel>)?.0;
+		let monkey_true = base::match_tokens!(value_true.split(' '); "throw", "to", "monkey", monkey_true: FromStrToTryFromAdapter<usize>)?.0;
+		let monkey_false = base::match_tokens!(value_false.split(' '); "throw", "to", "monkey", monkey_false: FromStrToTryFromAdapter<usize>)?.0;
 
 		Ok(Self { divisible_by, monkey_true, monkey_false })
 	}
