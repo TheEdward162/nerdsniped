@@ -3,7 +3,9 @@ use std::{io::Read, collections::VecDeque};
 use anyhow::Context;
 
 use aoc_commons as base;
-use base::{anyhow, log, geometry::{Grid2, Point2}};
+use base::{anyhow, log, geometry::{Grid2, Point}};
+
+type Point2 = Point<2>;
 
 #[derive(Debug, Clone)]
 struct BfsState {

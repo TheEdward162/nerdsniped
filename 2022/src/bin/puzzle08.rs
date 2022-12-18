@@ -3,7 +3,9 @@ use std::{io::Read, fmt};
 use anyhow::Context;
 
 use aoc_commons as base;
-use base::{anyhow, log, geometry::{Grid2, Point2}};
+use base::{anyhow, log, geometry::{Grid2, Point}};
+
+type Point2 = Point<2>;
 
 #[derive(Clone, Copy)]
 struct Visibility {
@@ -119,8 +121,8 @@ fn main() -> anyhow::Result<()> {
 			// mirror vis
 			let b = map.bounding_box();
 			evaluate_visibility(&map, &mut map_visibility, Point2::new(
-				b.max.x - x + b.min.x - 1,
-				b.max.y - y + b.min.y - 1
+				b.max.x() - x + b.min.x() - 1,
+				b.max.y() - y + b.min.y() - 1
 			))?;
 		}
 	}

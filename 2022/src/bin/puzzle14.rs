@@ -6,9 +6,12 @@ use aoc_commons as base;
 use base::{anyhow, log};
 
 use base::{
-	geometry::{Grid2, Point2, Rectangle2},
+	geometry::{Grid2, Point, Rectangle},
 	macros::FromStrToTryFromAdapter
 };
+
+type Point2 = Point<2>;
+type Rectangle2 = Rectangle<2>;
 
 #[derive(Clone, Copy)]
 enum Cell {
@@ -34,8 +37,8 @@ fn map_fill_line(map: &mut Grid2<Cell>, from: Point2, to: Point2, fill: Cell) ->
 	let min = from.min(to);
 	let max = from.max(to);
 
-	for y in min.y ..= max.y {
-		for x in min.x ..= max.x {
+	for y in min.y() ..= max.y() {
+		for x in min.x() ..= max.x() {
 			*map.get_mut(Point2::new(x, y)).context("Invalid coordinates")? = fill;
 		}
 	}
@@ -130,8 +133,8 @@ fn main() -> anyhow::Result<()> {
 
 	let bounding_box = lines.iter().flat_map(|p| p.iter()).fold(
 		Rectangle2 { min: Point2::new(isize::MAX, 0), max: Point2::new(0, 0) }, |acc, p| Rectangle2 {
-			min: Point2::new(acc.min.x.min(p.x), acc.min.y.min(p.y)),
-			max: Point2::new(acc.max.x.max(p.x), acc.max.y.max(p.y))
+			min: acc.min.min(*p),
+			max: acc.max.max(*p)
 		}
 	);
 	let bounding_box = Rectangle2 {
@@ -153,15 +156,15 @@ fn main() -> anyhow::Result<()> {
 			map_fill_line(&mut map1, window[0], window[1], Cell::Rock)?;
 		}
 	}
-	map_fill_line(&mut map1, b1.min, Point2::new(b1.min.x, b1.max.y - 1), Cell::Void)?;
-	map_fill_line(&mut map1, Point2::new(b1.max.x - 1, b1.min.y), Point2::new(b1.max.x - 1, b1.max.y - 1), Cell::Void)?;
-	map_fill_line(&mut map1, Point2::new(b1.min.x, b1.max.y - 1), Point2::new(b1.max.x - 1, b1.max.y - 1), Cell::Void)?;
+	map_fill_line(&mut map1, b1.min, Point2::new(b1.min.x(), b1.max.y() - 1), Cell::Void)?;
+	map_fill_line(&mut map1, Point2::new(b1.max.x() - 1, b1.min.y()), Point2::new(b1.max.x() - 1, b1.max.y() - 1), Cell::Void)?;
+	map_fill_line(&mut map1, Point2::new(b1.min.x(), b1.max.y() - 1), Point2::new(b1.max.x() - 1, b1.max.y() - 1), Cell::Void)?;
 	simulate(map1)?;
 
 	// part 2
 	let b2 = Rectangle2 {
-		min: bounding_box.min - Point2::new(bounding_box.size().y, 0),
-		max: bounding_box.max + Point2::new(bounding_box.size().y, 2)
+		min: bounding_box.min - Point2::new(bounding_box.size().y(), 0),
+		max: bounding_box.max + Point2::new(bounding_box.size().y(), 2)
 	};
 	log::debug!("Boundaries: {:?}", b2);
 
@@ -172,7 +175,7 @@ fn main() -> anyhow::Result<()> {
 			map_fill_line(&mut map2, window[0], window[1], Cell::Rock)?;
 		}
 	}
-	map_fill_line(&mut map2, Point2::new(b2.min.x, b2.max.y - 1), Point2::new(b2.max.x - 1, b2.max.y - 1), Cell::Rock)?;
+	map_fill_line(&mut map2, Point2::new(b2.min.x(), b2.max.y() - 1), Point2::new(b2.max.x() - 1, b2.max.y() - 1), Cell::Rock)?;
 	simulate(map2)?;
 
 	Ok(())

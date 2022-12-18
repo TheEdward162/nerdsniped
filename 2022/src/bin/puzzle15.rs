@@ -6,9 +6,12 @@ use aoc_commons as base;
 use base::{anyhow, log};
 
 use base::{
-	geometry::{Point2, Rectangle2, Circle2},
+	geometry::{Point, Rectangle, Circle2},
 	macros::FromStrToTryFromAdapter
 };
+
+type Point2 = Point<2>;
+type Rectangle2 = Rectangle<2>;
 
 const SCAN_ROW: isize = 2000000;
 const DISTRESS_BOUNDARIES: Rectangle2 = Rectangle2 {
@@ -55,8 +58,8 @@ fn main() -> anyhow::Result<()> {
 
 	// part1
 	let b1 = Rectangle2 {
-		min: Point2::new(bounding_box.min.x - bounding_box.size().x.abs(), SCAN_ROW),
-		max: Point2::new(bounding_box.max.x + bounding_box.size().x.abs(), SCAN_ROW + 1)
+		min: Point2::new(bounding_box.min.x() - bounding_box.size().x().abs(), SCAN_ROW),
+		max: Point2::new(bounding_box.max.x() + bounding_box.size().x().abs(), SCAN_ROW + 1)
 	};
 	log::debug!("Boundaries: {}", b1);
 	let mut cleared_count = 0;
@@ -65,7 +68,7 @@ fn main() -> anyhow::Result<()> {
 			cleared_count += 1;
 		}
 	}
-	log::debug!("Done part 1");
+	log::info!("Done part 1");
 	
 	// part2
 	let circle_outside_points: Vec<HashSet<Point2>> = circles.iter().map(
@@ -98,10 +101,10 @@ fn main() -> anyhow::Result<()> {
 			}
 		}
 	}
-	log::debug!("Done part 2");
+	log::info!("Done part 2");
 
 	println!("Cleared count: {}", cleared_count);
-	println!("Tuning frequency: {}", empty_point.map(|p| p.x * 4000000 + p.y).context("Did not find empty point")?);
+	println!("Tuning frequency: {}", empty_point.map(|p| p.x() * 4000000 + p.y()).context("Did not find empty point")?);
 
 	Ok(())
 }

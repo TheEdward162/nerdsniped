@@ -6,8 +6,10 @@ use aoc_commons as base;
 use base::{anyhow, log};
 
 use base::{
-	geometry::Point2
+	geometry::Point
 };
+
+type Point2 = Point<2>;
 
 #[derive(Debug)]
 struct Intervals {
@@ -64,12 +66,12 @@ impl Heights {
 		for point in rock.points_iter() {
 			let point = point + shift_point;
 
-			if point.x < 0 || point.x >= Self::WIDTH as isize {
+			if point.x() < 0 || point.x() >= Self::WIDTH as isize {
 				to_move = false;
 				break;
 			}
 
-			if self.columns[point.x as usize].contains(point.y) {
+			if self.columns[point.x() as usize].contains(point.y()) {
 				to_move = false;
 				break;
 			}
@@ -83,11 +85,11 @@ impl Heights {
 		} else if matches!(shift, RockShift::Down) {
 			let mut intervals = [None::<[isize; 2]>; Self::WIDTH];
 			for point in rock.points_iter() {
-				let interval = &mut intervals[point.x as usize];
+				let interval = &mut intervals[point.x() as usize];
 
 				*interval = match interval {
-					None => Some([point.y, point.y + 1]),
-					Some([l, h]) => Some([(*l).min(point.y), (*h).max(point.y + 1)])
+					None => Some([point.y(), point.y() + 1]),
+					Some([l, h]) => Some([(*l).min(point.y()), (*h).max(point.y() + 1)])
 				};
 			}
 			for i in 0 .. Self::WIDTH {
@@ -221,7 +223,7 @@ impl Shape {
 	}
 
 	pub fn height(&self) -> isize {
-		self.points_iter().fold(isize::MIN, |acc, p| acc.max(p.y)) + 1
+		self.points_iter().fold(isize::MIN, |acc, p| acc.max(p.y())) + 1
 	}
 }
 
