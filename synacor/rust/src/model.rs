@@ -127,6 +127,25 @@ define_parseable! {
 	}
 	hint = "register"
 }
+impl<'a> TryFrom<&'a str> for RegisterId {
+	type Error = anyhow::Error;
+
+	fn try_from(value: &'a str) -> Result<Self, Self::Error> {
+		let me = match value {
+			"R0" | "r0" => Self::R0,
+			"R1" | "r1" => Self::R1,
+			"R2" | "r2" => Self::R2,
+			"R3" | "r3" => Self::R3,
+			"R4" | "r4" => Self::R4,
+			"R5" | "r5" => Self::R5,
+			"R6" | "r6" => Self::R6,
+			"R7" | "r7" => Self::R7,
+			id => anyhow::bail!("Invalid register id: \"{}\"", id)
+		};
+
+		Ok(me)
+	}
+}
 
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, serde::Serialize, serde::Deserialize)]
 pub struct Number(u16);
@@ -143,6 +162,8 @@ impl TryFrom<Word> for Number {
 }
 impl Number {
 	pub const ZERO: Self = Self(0);
+	// pub const ONE: Self = Self(1);
+	// pub const MAX: Self = Self(0x7FFF);
 
 	const MODULO: Word = 32768;
 
@@ -327,5 +348,30 @@ impl Instruction {
 		let instruction = kind.decode_arguments(&memory[1..])?;
 
 		Ok(instruction)
+	}
+}
+impl fmt::Display for Instruction {
+	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+		match self {
+			Self::Out { source: ArgumentValue::Literal(lit) } => {
+				let ch = lit.0 as u8 as char;
+				write!(f, "Out {:?}", ch)
+			},
+			Self::Set { destination, value } => write!(f, "Set {:?} = {:?}", destination, value),
+			Self::Add { destination, left, right } => write!(f, "Add {:?} = {:?} + {:?}", destination, left, right),
+			Self::Gt { destination, left, right } => write!(f, "Gt {:?} = {:?} > {:?}", destination, left, right),
+			Self::Eq { destination, left, right } => write!(f, "Eq {:?} = {:?} == {:?}", destination, left, right),
+			Self::Push { source } => write!(f, "Push {:?}", source),
+			Self::Pop { destination } => write!(f, "Pop {:?}", destination),
+			
+			Self::Rmem { destination, address } => write!(f, "Rmem {:?} = [{:?}]", destination, address),
+			Self::Wmem { address, source } => write!(f, "Wmem [{:?}] = {:?}", address, source),
+			
+			Self::Call { address } => write!(f, "Call [{:?}]", address),
+			Self::Jt { test, address } => write!(f, "Jt if {:?} -> [{:?}]", test, address),
+			Self::Jf { test, address } => write!(f, "Jf if !{:?} -> [{:?}]", test, address),
+
+			other => write!(f, "{:?}", other)
+		}
 	}
 }

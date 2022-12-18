@@ -1,252 +1,84 @@
 use std::{
-	io::{self, Read, Write, Seek},
-	ops::{Not, BitOr, Add, Mul, Rem, BitAnd},
-	env, fs::OpenOptions, fmt
+	io::{self, Read, Seek},
+	env, fs::OpenOptions
 };
 
-use serde::{Serialize, Deserialize};
+use aoc_commons as base;
 
 use base::anyhow::{self, Context};
 use base::log;
 
-use aoc_commons as base;
-
 mod model;
-use model::{Word, Number, RegisterId, ArgumentValue, Instruction};
+mod disassembler;
+mod cpu;
 
-fn next_byte<R: Read>(mut stream: R) -> anyhow::Result<u8> {
+use model::{Word, Number};
+use cpu::{Cpu, CpuTickResult, CpuSnapshot};
+
+fn next_byte<R: Read>(mut stream: R) -> anyhow::Result<Option<u8>> {
 	let mut buf = [0u8; 1];
-	stream.read(&mut buf).context("Failed to read from in stream")?;
-
-	Ok(buf[0])
+	match stream.read(&mut buf) {
+		Err(err) if err.kind() == io::ErrorKind::WouldBlock => return Ok(None),
+		Ok(0) => return Ok(None),
+		Err(err) => anyhow::bail!("Failed to read from in stream: {}", err),
+		Ok(_) => Ok(Some(buf[0]))
+	}
 }
 
-#[derive(Serialize, Deserialize)]
-struct CpuSnapshot {
-	memory: Vec<Word>,
-	registers: [Word; 8],
-	stack: Vec<Word>,
-	instruction_pointer: Number,
+struct InputStream {
+	buffer: Vec<u8>,
+	cursor: usize
 }
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum CpuTickResult {
-	Continue,
-	Debug(u8),
-	Halt
-}
-
-struct CpuDebugState {
-	last_input_was_newline: bool
-}
-impl CpuDebugState {
+impl InputStream {
 	pub fn new() -> Self {
-		Self {
-			last_input_was_newline: true
-		}
+		Self { buffer: Vec::new(), cursor: 0 }
+	}
+
+	pub fn as_slice(&self) -> &[u8] {
+		&self.buffer[self.cursor ..]
+	}
+
+	pub fn extend(&mut self, iter: impl Iterator<Item = u8>) {
+		self.buffer.extend(iter);
+	}
+
+	pub fn clean(&mut self) {
+		let _ = self.buffer.drain(.. self.cursor);
+		self.cursor = 0;
+	}
+}
+impl Read for InputStream {
+	fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
+		let read_len = (self.buffer.len() - self.cursor).min(buf.len());
+
+		buf[..read_len].copy_from_slice(&self.buffer[self.cursor ..][.. read_len]);
+		self.cursor += read_len;
+
+		Ok(read_len)
 	}
 }
 
-struct Cpu<R: Read, W: Write> {
-	registers: [Word; 8],
-	stack: Vec<Word>,
-	memory: Vec<Word>,
-	instruction_pointer: Number,
-	in_stream: R,
-	out_stream: W,
-	cpu_debug: CpuDebugState
-}
-impl<R: Read, W: Write> Cpu<R, W> {
-	pub fn new(
-		memory: Vec<Word>,
-		in_stream: R,
-		out_stream: W
-	) -> Self {
-		Self {
-			registers: [0; 8],
-			stack: Vec::new(),
-			memory,
-			instruction_pointer: Number::ZERO,
-			in_stream,
-			out_stream,
-			cpu_debug: CpuDebugState::new()
-		}
-	}
+struct U16Value(u16);
+impl<'a> TryFrom<&'a str> for U16Value {
+	type Error = std::num::ParseIntError;
 
-	pub fn save(&self) -> CpuSnapshot {
-		log::info!("Saving to snapshot");
-
-		CpuSnapshot {
-			memory: self.memory.clone(),
-			registers: self.registers,
-			stack: self.stack.clone(),
-			instruction_pointer: self.instruction_pointer
-		}
-	}
-
-	pub fn restore(&mut self, snapshot: CpuSnapshot) {
-		log::info!("Restoring from snapshot");
-
-		self.memory = snapshot.memory;
-		self.registers = snapshot.registers;
-		self.stack = snapshot.stack;
-		self.instruction_pointer = snapshot.instruction_pointer;
-	}
-
-	fn set_register(&mut self, id: RegisterId, value: Word) {
-		self.registers[id as u16 as usize - RegisterId::R0 as u16 as usize] = value;
-	}
-
-	fn register(&self, id: RegisterId) -> Word {
-		self.registers[id as u16 as usize - RegisterId::R0 as u16 as usize]
-	}
-
-	fn argument(&self, argument: ArgumentValue) -> Word {
-		match argument {
-			ArgumentValue::Literal(number) => number.to_word(),
-			ArgumentValue::Register(id) => self.register(id)
-		}
-	}
-
-	fn argument_number(&self, argument: ArgumentValue) -> Number {
-		match argument {
-			ArgumentValue::Literal(number) => number,
-			ArgumentValue::Register(id) => Number::from_word(self.register(id))
-		}
-	}
-
-	pub fn tick(&mut self) -> anyhow::Result<CpuTickResult> {
-		log::trace!("CPU tick at: {}", self.instruction_pointer);
-		let memory = &self.memory[self.instruction_pointer.to_word() as usize ..];
-		let memory = &memory[.. 4.min(memory.len())];
-		log::trace!("Decoding memory: {:?}", memory);
-
-		let instruction = Instruction::decode(memory)?;
-		let old_instruction_pointer = self.instruction_pointer;
-		self.instruction_pointer = self.instruction_pointer + Number::from_word(instruction.size() as u16);
-
-		log::debug!("Decoded instruction: {:?}", instruction);
-		match instruction {
-			Instruction::Halt => return Ok(CpuTickResult::Halt),
-			Instruction::Set { destination, value } => self.set_register(destination, self.argument(value)),
-			Instruction::Push { source } => self.stack.push(self.argument(source)),
-			Instruction::Pop { destination } => { let value = self.stack.pop().context("Invalid pop instruction: Stack empty")?; self.set_register(destination, value) },
-			Instruction::Eq { destination, left, right } => self.set_register(
-				destination, if self.argument(left) == self.argument(right) { 1 } else { 0 }
-			),
-			Instruction::Gt { destination, left, right } => self.set_register(
-				destination, if self.argument(left) > self.argument(right) { 1 } else { 0 }
-			),
-			Instruction::Jmp { address } => {
-				self.instruction_pointer = self.argument_number(address);
-			}
-			Instruction::Jt { test, address } => if self.argument(test) != 0 {
-				self.instruction_pointer = self.argument_number(address);
-			},
-			Instruction::Jf { test, address } => if self.argument(test) == 0 {
-				self.instruction_pointer = self.argument_number(address);
-			},
-			Instruction::Add { destination, left, right } => self.set_register(destination, self.argument_number(left).add(self.argument_number(right)).to_word()),
-			Instruction::Mult { destination, left, right } => self.set_register(destination, self.argument_number(left).mul(self.argument_number(right)).to_word()),
-			Instruction::Mod { destination, left, right } => self.set_register(destination, self.argument_number(left).rem(self.argument_number(right)).to_word()),
-			Instruction::And { destination, left, right } => self.set_register(destination, self.argument_number(left).bitand(self.argument_number(right)).to_word()),
-			Instruction::Or { destination, left, right } => self.set_register(destination, self.argument_number(left).bitor(self.argument_number(right)).to_word()),
-			Instruction::Not { destination, value } => self.set_register(destination, self.argument_number(value).not().to_word()),
-			Instruction::Rmem { destination, address } => {
-				let address = self.argument(address) as usize;
-				let memory = self.memory.get(address).context("Memory read out of bounds")?;
-				self.set_register(destination, *memory);
-			}
-			Instruction::Wmem { address, source } => {
-				let address = self.argument(address) as usize;
-				let source = self.argument(source);
-				let memory = self.memory.get_mut(address).context("Memory write out of bounds")?;
-				*memory = source;
-			}
-			Instruction::Call { address } => {
-				self.stack.push(self.instruction_pointer.to_word());
-				self.instruction_pointer = self.argument_number(address);
-			}
-			Instruction::Ret => {
-				let value = match self.stack.pop() {
-					None => return Ok(CpuTickResult::Halt),
-					Some(v) => v
-				};
-
-				self.instruction_pointer = Number::from_word(value);
-			}
-			Instruction::Out { source } => {
-				write!(self.out_stream, "{}", char::from(self.argument(source) as u8)).context("Failed to write to out stream")?;
-			},
-			Instruction::In { destination } => {
-				let byte = next_byte(&mut self.in_stream)?;
-				if byte == b'!' && self.cpu_debug.last_input_was_newline {
-					self.cpu_debug.last_input_was_newline = false;
-
-					let code = next_byte(&mut self.in_stream)?;
-					if next_byte(&mut self.in_stream)? != b'\n' {
-						log::warn!("Expected newline after debug command");
-					}
-					self.instruction_pointer = old_instruction_pointer;
-
-					return Ok(CpuTickResult::Debug(code));
-				}
-				self.cpu_debug.last_input_was_newline = byte == b'\n';
-
-				self.set_register(destination, byte as u16);
-			},
-			Instruction::Noop => ()
-		}
-
-		Ok(CpuTickResult::Continue)
+	fn try_from(value: &'a str) -> Result<Self, Self::Error> {
+		if value.starts_with("0x") {
+			u16::from_str_radix(&value[2..], 16)
+		} else {
+			u16::from_str_radix(value, 10)
+		}.map(Self)
 	}
 }
-impl<R: Read, W: Write> fmt::Debug for Cpu<R, W> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-		writeln!(f, "Registers:")?;
-		for r in 0 .. self.registers.len() {
-			writeln!(f, "R{}: 0x{:0>4X}", r, self.registers[r])?;							
-		}
-		writeln!(f)?;
 
-		writeln!(f, "Stack:")?;
-		for (i, value) in self.stack.iter().enumerate() {
-			writeln!(f, "{: >3}: 0x{:0>4X}", i, value)?;
-		}
-		writeln!(f)?;
-
-		writeln!(f, "Diassembly:")?;
-
-		let mut count = 0;
-		let mut ip = self.instruction_pointer.to_word() as usize;
-		while count < 7 && ip < self.memory.len() {
-			write!(f, "0x{:0>4X}: ", ip)?;
-			
-			let memory = &self.memory[ip ..];
-			let memory = &memory[.. memory.len().min(4)];
-			match Instruction::decode(memory) {
-				Ok(instr) => {
-					writeln!(f, "{:?}", instr)?;
-					ip += instr.size();
-				}
-				Err(_) => {
-					writeln!(f, "<{}>", memory[0])?;
-					ip += 1;
-				}
-			}
-
-			count += 1;
-		}
-
-		writeln!(f)?;
-
-		Ok(())
-    }
+enum RunState {
+	Run,
+	Step,
+	UntilAddress(Number)
 }
 
 fn main() -> anyhow::Result<()> {
 	let mut input = base::initialize()?;
-
 	let memory: Vec<Word> = {
 		let mut memory = Vec::new();
 
@@ -262,29 +94,141 @@ fn main() -> anyhow::Result<()> {
 		memory
 	};
 
-	let mut cpu = Cpu::new(memory, std::io::stdin(), std::io::stdout());
-
+	// dump disassembly
+	match env::var("MEMORY_DISASSEMBLY") {
+		Err(_) => (),
+		Ok(value) => {
+			let file = OpenOptions::new().write(true).create(true).truncate(true).open(value).context("Failed to open disassembly file")?;
+			disassembler::disassemble(file, &memory).context("Failed to disassemble")?;
+		}
+	};
 	let mut snapshot_file = match env::var("CPU_SNAPSHOT") {
 		Err(_) => None,
 		Ok(value) => Some(OpenOptions::new().read(true).write(true).create(true).open(value).context("Failed to open snapshot file")?)
 	};
 
-	let mut stepping: bool = false;
+	// cpu state
+	let mut cpu = Cpu::new(memory);
+	let mut in_stream = InputStream::new();
+	let mut out_stream = Vec::<u8>::new();
+
+	// main loop
+	let mut need_input = false;
+	let mut run_state = RunState::Run;
 	loop {
-		if stepping {
-			println!("?");
-			match next_byte(&mut cpu.in_stream)? {
-				b'q' => {
-					stepping = false;
+		let pause = match run_state {
+			RunState::Step => true,
+			RunState::UntilAddress(address) if cpu.instruction_pointer() == address => {
+				run_state = RunState::Step;
+				true
+			}
+			_ => false,
+		};
+
+		if pause {
+			eprint!("{:?}", cpu);
+			eprintln!("Buffered input: {:?}", String::from_utf8_lossy(in_stream.as_slice()));
+			eprintln!("Buffered output: {:?}", String::from_utf8_lossy(out_stream.as_slice()));
+			
+			eprint!("> ");
+			need_input = true;
+		}
+		if let Some(b'\n') = out_stream.last() {
+			if !pause {
+				print!("{}", String::from_utf8_lossy(out_stream.as_slice()));
+			}
+			out_stream.clear();
+		}
+
+		if need_input {
+			let line = std::io::stdin().lines().next()
+				.context("Stdin ended")?
+				.context("Failed to read stdin")?
+			;
+			need_input = false;
+			
+			let continue_tick = match line.as_str() {
+				"!save" => {
+					if let Some(snapshot_file) = snapshot_file.as_mut() {
+						let snapshot = cpu.save();
+
+						snapshot_file.set_len(0).context("Failed to truncate file")?;
+						snapshot_file.seek(io::SeekFrom::Start(0)).context("Failed to seek snapshot file")?;
+						serde_json::to_writer(snapshot_file, &snapshot).context("Failed to write snapshot file")?;
+					} else {
+						log::warn!("No snapshot file");
+					}
+
+					false
 				}
-				_ => ()
+				"!load" => {
+					if let Some(snapshot_file) = snapshot_file.as_mut() {
+						snapshot_file.seek(io::SeekFrom::Start(0)).context("Failed to seek snapshot file")?;
+						match serde_json::from_reader::<_, CpuSnapshot>(snapshot_file).context("Failed to read snapshot file") {
+							Err(err) => log::error!("{}", err),
+							Ok(snapshot) => cpu.restore(snapshot)
+						}
+					} else {
+						log::warn!("No snapshot file");
+					}
+
+					false
+				}
+				"!step" => {
+					run_state = RunState::Step;
+
+					false
+				}
+				line if line.starts_with("!continue") => {
+					if let Ok(address) = base::match_tokens!(line.split(' '); "!continue", address: U16Value) {
+						run_state = RunState::UntilAddress(Number::from_word(address.0));
+					} else {
+						run_state = RunState::Run;
+					}
+
+					true
+				}
+				line if line.starts_with("!set") => {
+					if let Ok((register, value)) = base::match_tokens!(line.split(' '); "!set", "reg", register: model::RegisterId, value: U16Value) {
+						cpu.set_register(register, value.0);
+					} else if let Ok((address, value)) = base::match_tokens!(line.split(' '); "!set", "mem", address: U16Value, value: U16Value) {
+						cpu.set_memory(address.0, value.0);
+					} else {
+						log::error!("Invalid !set command: \"{}\"", line);
+					}
+
+					false
+				}
+				_ if line.starts_with("!input") => {
+					in_stream.extend(line.into_bytes().into_iter().skip(7));
+					in_stream.extend(std::iter::once(b'\n'));
+					
+					false
+				}
+				_ if matches!(run_state, RunState::Run) => {
+					in_stream.clean();
+					in_stream.extend(line.into_bytes().into_iter());
+					in_stream.extend(std::iter::once(b'\n'));
+
+					true
+				}
+				"" => true,
+				line => {
+					log::error!("Invalid debug command '{}' - known codes: !save, !load, !step, !continue [hex address], !set [reg value]", line);
+
+					false
+				}
+			};
+
+			if !continue_tick {
+				continue;
 			}
 		}
 
-		match cpu.tick() {
+		match cpu.tick(&mut in_stream, &mut out_stream) {
 			Err(err) => {
 				log::error!("CPU error: {}", err);
-				println!("{:?}", cpu);
+				eprintln!("{:?}", cpu);
 
 				return Err(err);
 			}
@@ -292,31 +236,11 @@ fn main() -> anyhow::Result<()> {
 				log::info!("CPU halted");
 				break
 			}
-			Ok(CpuTickResult::Debug(code)) => {
-				match code {
-					b's' => if let Some(snapshot_file) = snapshot_file.as_mut() {
-						let snapshot = cpu.save();
-
-						snapshot_file.set_len(0).context("Failed to truncate file")?;
-						snapshot_file.seek(io::SeekFrom::Start(0)).context("Failed to seek snapshot file")?;
-						serde_json::to_writer(snapshot_file, &snapshot).context("Failed to write snapshot file")?;
-					},
-					b'l' => if let Some(snapshot_file) = snapshot_file.as_mut() {
-						snapshot_file.seek(io::SeekFrom::Start(0)).context("Failed to seek snapshot file")?;
-						match serde_json::from_reader::<_, CpuSnapshot>(snapshot_file).context("Failed to read snapshot file") {
-							Err(err) => log::error!("{}", err),
-							Ok(snapshot) => cpu.restore(snapshot)
-						}
-					},
-					b'd' => { stepping = true; }
-					code => log::warn!("Invalid debug code '{}' - known codes: s, l, d", code)
-				}
+			Ok(CpuTickResult::Input) => {
+				log::debug!("Waiting for input");
+				need_input = true;
 			}
 			Ok(CpuTickResult::Continue) => ()
-		}
-
-		if stepping {
-			println!("{:?}", cpu);
 		}
 	}
 
@@ -325,9 +249,8 @@ fn main() -> anyhow::Result<()> {
 
 #[cfg(test)]
 mod test {
-    use crate::CpuTickResult;
-
-    use super::{Cpu, RegisterId};
+	use crate::cpu::{Cpu, CpuTickResult};
+	use crate::model::RegisterId;
 
 	#[test]
 	fn runs_example_program_correctly() {
@@ -335,12 +258,12 @@ mod test {
 
 		let mut out = Vec::<u8>::new();
 
-		let mut cpu = Cpu::new(memory, std::io::empty(), &mut out);
+		let mut cpu = Cpu::new(memory);
 		let out_value = 4 + cpu.register(RegisterId::R1);
 
-		assert_eq!(cpu.tick().unwrap(), CpuTickResult::Continue);
-		assert_eq!(cpu.tick().unwrap(), CpuTickResult::Continue);
-		assert_eq!(cpu.tick().is_err(), true);
+		assert_eq!(cpu.tick(std::io::empty(), &mut out).unwrap(), CpuTickResult::Continue);
+		assert_eq!(cpu.tick(std::io::empty(), &mut out).unwrap(), CpuTickResult::Continue);
+		assert_eq!(cpu.tick(std::io::empty(), &mut out).is_err(), true);
 
 		assert_eq!(cpu.register(RegisterId::R0), out_value);
 		assert_eq!(out.get(0).copied(), Some(out_value as u8));
