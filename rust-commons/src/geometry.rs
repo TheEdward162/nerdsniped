@@ -1,6 +1,6 @@
 use std::{
 	fmt,
-	ops::{Add, Sub, Mul, Neg, Range}
+	ops::{Add, Sub, Mul, Neg, Range, Rem}
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -56,7 +56,12 @@ impl Point<3> {
 }
 impl<const D: usize> Point<D> {
 	pub const MIN: Self = Self([isize::MIN; D]);
+	pub const ZERO: Self = Self([0; D]);
 	pub const MAX: Self = Self([isize::MAX; D]);
+
+	pub fn data(&self) -> &[isize; D] {
+		&self.0
+	}
 
 	pub fn min(self, other: Self) -> Self {
 		let mut v = [0; D];
@@ -112,11 +117,30 @@ impl<const D: usize> Sub<Self> for Point<D> {
 		Self(v)
 	}
 }
+impl<const D: usize> Rem<Self> for Point<D> {
+	type Output = Self;
+
+	fn rem(self, rhs: Self) -> Self::Output {
+		let mut v = [0; D];
+		for i in 0 .. D {
+			v[i] = self.0[i] % rhs.0[i];
+		}
+
+		Self(v)
+	}
+}
 impl<const D: usize> Mul<isize> for Point<D> {
 	type Output = Self;
 
 	fn mul(self, rhs: isize) -> Self::Output {
 		Self(self.0.map(|v| v * rhs))
+	}
+}
+impl<const D: usize> Rem<isize> for Point<D> {
+	type Output = Self;
+
+	fn rem(self, rhs: isize) -> Self::Output {
+		Self(self.0.map(|v| v % rhs))
 	}
 }
 impl<const D: usize> fmt::Display for Point<D> {
@@ -244,6 +268,17 @@ impl<const D: usize> Rectangle<D> {
 
 		Self { min, max }
 	}
+
+	pub fn wrap_around(&self, point: Point<D>) -> Point<D> {
+		if self.contains(&point) {
+			return point;
+		}
+
+		let size = self.size();
+		let relative = point - self.min + size; // TODO: hotfix - (-1 % x = -1)
+
+		self.min + (relative % size)
+	}
 }
 impl<const D: usize> Add<Point<D>> for Rectangle<D> {
 	type Output = Self;
@@ -252,6 +287,16 @@ impl<const D: usize> Add<Point<D>> for Rectangle<D> {
 		Self {
 			min: self.min + rhs,
 			max: self.max + rhs
+		}
+	}
+}
+impl<const D: usize> Sub<Point<D>> for Rectangle<D> {
+	type Output = Self;
+
+	fn sub(self, rhs: Point<D>) -> Self::Output {
+		Self {
+			min: self.min - rhs,
+			max: self.max - rhs
 		}
 	}
 }
@@ -339,6 +384,65 @@ impl fmt::Display for Circle2 {
 		write!(f, "{}~{}", self.center, self.radius)
 	}
 }
+
+/*
+#[derive(Debug, Clone)]
+pub struct Grid<T, const D: usize> {
+	cells: Vec<T>,
+	bounding_box: Rectangle<D>
+}
+impl<T, const D: usize> Grid<T, D> {
+	pub fn new(cells: Vec<T>, bounding_box: Rectangle<D>) -> anyhow::Result<Self> {
+		anyhow::ensure!(bounding_box.area() as usize == cells.len(), "bounding_box must define the same size as cells len");
+
+		Ok(Self { cells, bounding_box })
+	}
+
+	pub fn bounding_box(&self) -> Rectangle<D> {
+		self.bounding_box
+	}
+
+	pub fn dim_range(&self, dim: usize) -> Range<isize> {
+		self.bounding_box.min.0[dim] .. self.bounding_box.max.0[dim]
+	}
+
+	fn index(at: Point<D>, size: Point<D>) -> usize {
+		std::iter::once(1).chain(size.data()).
+	}
+
+	pub fn get(&self, at: Point<D>) -> Option<&T> {
+		let at = at - self.bounding_box.min;
+		self.get_relative(at)
+	}
+
+	pub fn get_relative(&self, at: Point<D>) -> Option<&T> {
+		let size = self.bounding_box.size();
+		if at.data().into_iter().zip(size.data().into_iter()).any(|(&at, &size)| at < 0 || at >= size) {
+			return None;
+		}
+
+		Some(&self.cells[at.x() as usize + at.y() as usize * size.x().abs() as usize])
+	}
+
+	pub fn get_mut(&mut self, at: Point<D>) -> Option<&mut T> {
+		let at = at - self.bounding_box.min;
+		self.get_mut_relative(at)
+	}
+
+	pub fn get_mut_relative(&mut self, at: Point<D>) -> Option<&mut T> {
+		let size = self.bounding_box.size();
+		if at.x() < 0 || at.x() >= size.x() || at.y() < 0 || at.y() >= size.y() {
+			return None;
+		}
+
+		Some(&mut self.cells[at.x() as usize + at.y() as usize * size.x().abs() as usize])
+	}
+
+	pub fn shift(&mut self, shift: Point<D>) {
+		self.bounding_box = self.bounding_box + shift;
+	}
+}
+ */
 
 #[derive(Debug, Clone)]
 pub struct Grid2<T> {
