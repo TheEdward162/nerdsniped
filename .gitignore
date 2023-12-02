@@ -1,3 +1,4 @@
 /workdir
 target/
 Cargo.lock
+inputs/
