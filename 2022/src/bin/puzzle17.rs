@@ -5,9 +5,7 @@ use anyhow::Context;
 use aoc_commons as base;
 use base::{anyhow, log};
 
-use base::{
-	geometry::Point
-};
+use base::geometry::Point;
 
 type Point2 = Point<2>;
 
@@ -176,26 +174,26 @@ enum Shape {
 	Square
 }
 impl Shape {
-	const SHAPE_HLINE: &[Point2] = &[
+	const SHAPE_HLINE: &'static [Point2] = &[
 		Point2::new(0, 0), Point2::new(1, 0), Point2::new(2, 0), Point2::new(3, 0)
 	];
-	const SHAPE_PLUS: &[Point2] = &[
+	const SHAPE_PLUS: &'static [Point2] = &[
 		Point2::new(1, 0),
 		Point2::new(0, 1), Point2::new(1, 1), Point2::new(2, 1),
 		Point2::new(1, 2)
 	];
-	const SHAPE_REVL: &[Point2] = &[
+	const SHAPE_REVL: &'static [Point2] = &[
 		Point2::new(2, 0),
 		Point2::new(2, 1),
 		Point2::new(0, 2), Point2::new(1, 2), Point2::new(2, 2)
 	];
-	const SHAPE_VLINE: &[Point2] = &[
+	const SHAPE_VLINE: &'static [Point2] = &[
 		Point2::new(0, 0),
 		Point2::new(0, 1),
 		Point2::new(0, 2),
 		Point2::new(0, 3)
 	];
-	const SHAPE_SQUARE: &[Point2] = &[
+	const SHAPE_SQUARE: &'static [Point2] = &[
 		Point2::new(0, 0), Point2::new(1, 0),
 		Point2::new(0, 1), Point2::new(1, 1)
 	];
