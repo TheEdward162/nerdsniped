@@ -49,7 +49,7 @@ func main() {
 	scanner := bufio.NewScanner(input)
 	for scanner.Scan() {
 		t := scanner.Text()
-		aoc.LogDebug("text = %s\n", t)
+		aoc.LogTrace("text = %s\n", t)
 
 		trimmed := strings.TrimFunc(
 			t,
