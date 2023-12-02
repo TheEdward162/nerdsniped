@@ -23,12 +23,10 @@ type Cli struct {
 }
 func parseCli() (*Cli, error) {	
 	args := os.Args[1:]
-	if len(args) < 1 {
-		return nil, errors.New("Missing input file")
-	}
 
 	cli := new(Cli)
 	cli.InputPath = ""
+	cli.LogLevel = LogLevelError
 	
 	i := 0
 	for i < len(args) {
@@ -54,6 +52,10 @@ func parseCli() (*Cli, error) {
 		i += 1
 	}
 
+	if cli.InputPath == "" {
+		return nil, errors.New("Missing input file")
+	}
+
 	return cli, nil
 }
 
@@ -64,8 +66,12 @@ func Initialize() (io.Reader, error) {
 	}
 
 	log.SetFlags(log.Lmicroseconds | log.Lshortfile)
-	log.SetOutput(os.Stderr)
 	logLevel = cli.LogLevel
+	if logLevel == LogLevelOff {
+		log.SetOutput(io.Discard)
+	} else {
+		log.SetOutput(os.Stderr)
+	}
 
 	file, err := os.Open(cli.InputPath)
 	if err != nil {
