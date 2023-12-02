@@ -16,3 +16,4 @@ Command: `CPU_SNAPSHOT=workdir/synacor-snapshot.json MEMORY_DISASSEMBLY=workdir/
 
 Language: Go
 
+Command: `go run ./2023/cmd/puzzle01.go 2023/inputs/input01.txt`
