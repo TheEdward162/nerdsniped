@@ -2,8 +2,8 @@ use std::{io::Read, str::FromStr, fmt::Debug};
 
 use anyhow::Context;
 
-use aoc_commons as base;
-use base::{anyhow, log, macros::FromStrToTryFromAdapter};
+use aoc_commons as aoc;
+use aoc::{anyhow, log, macros::FromStrToTryFromAdapter};
 
 struct MoveCommand {
 	count: usize,
@@ -17,7 +17,7 @@ impl FromStr for MoveCommand {
 		let mut it = value.split(' ');
 		match it.next().context("Invalid command")? {
 			"move" => {
-				let (count, from, to) = base::match_tokens!(value.split(' '); "move", count: FromStrToTryFromAdapter<usize>, "from", from: FromStrToTryFromAdapter<usize>, "to", to: FromStrToTryFromAdapter<usize>)?;
+				let (count, from, to) = aoc::match_tokens!(value.split(' '); "move", count: FromStrToTryFromAdapter<usize>, "from", from: FromStrToTryFromAdapter<usize>, "to", to: FromStrToTryFromAdapter<usize>)?;
 
 				Ok(Self { count: count.0, from: from.0, to: to.0 })
 			}
@@ -128,7 +128,7 @@ impl Debug for State {
 }
 
 fn main() -> anyhow::Result<()> {
-	let mut file = base::initialize()?;
+	let mut file = aoc::initialize()?;
 
 	let mut input = String::new();
 	file.read_to_string(&mut input).context("Failed to read input file")?;

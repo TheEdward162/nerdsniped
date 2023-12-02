@@ -2,8 +2,8 @@ use std::{collections::HashSet, io::Read};
 
 use anyhow::Context;
 
-use aoc_commons as base;
-use base::anyhow;
+use aoc_commons as aoc;
+use aoc::anyhow;
 
 fn priority(item: char) -> anyhow::Result<u32> {
 	anyhow::ensure!((item as u32) < 256, "Invalid item value");
@@ -18,7 +18,7 @@ fn priority(item: char) -> anyhow::Result<u32> {
 }
 
 fn main() -> anyhow::Result<()> {
-	let mut file = base::initialize()?;
+	let mut file = aoc::initialize()?;
 
 	let mut input = String::new();
 	file.read_to_string(&mut input).context("Failed to read input file")?;

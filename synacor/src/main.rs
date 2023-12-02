@@ -3,10 +3,10 @@ use std::{
 	env, fs::OpenOptions
 };
 
-use aoc_commons as base;
+use aoc_commons as aoc;
 
-use base::anyhow::{self, Context};
-use base::log;
+use aoc::anyhow::{self, Context};
+use aoc::log;
 
 mod model;
 mod disassembler;
@@ -78,7 +78,7 @@ enum RunState {
 }
 
 fn main() -> anyhow::Result<()> {
-	let mut input = base::initialize()?;
+	let mut input = aoc::initialize()?;
 	let memory: Vec<Word> = {
 		let mut memory = Vec::new();
 
@@ -180,7 +180,7 @@ fn main() -> anyhow::Result<()> {
 					false
 				}
 				line if line.starts_with("!continue") => {
-					if let Ok(address) = base::match_tokens!(line.split(' '); "!continue", address: U16Value) {
+					if let Ok(address) = aoc::match_tokens!(line.split(' '); "!continue", address: U16Value) {
 						run_state = RunState::UntilAddress(Number::from_word(address.0));
 					} else {
 						run_state = RunState::Run;
@@ -189,9 +189,9 @@ fn main() -> anyhow::Result<()> {
 					true
 				}
 				line if line.starts_with("!set") => {
-					if let Ok((register, value)) = base::match_tokens!(line.split(' '); "!set", "reg", register: model::RegisterId, value: U16Value) {
+					if let Ok((register, value)) = aoc::match_tokens!(line.split(' '); "!set", "reg", register: model::RegisterId, value: U16Value) {
 						cpu.set_register(register, value.0);
-					} else if let Ok((address, value)) = base::match_tokens!(line.split(' '); "!set", "mem", address: U16Value, value: U16Value) {
+					} else if let Ok((address, value)) = aoc::match_tokens!(line.split(' '); "!set", "mem", address: U16Value, value: U16Value) {
 						cpu.set_memory(address.0, value.0);
 					} else {
 						log::error!("Invalid !set command: \"{}\"", line);

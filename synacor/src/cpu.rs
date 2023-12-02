@@ -6,7 +6,7 @@ use std::{
 
 use serde::{Serialize, Deserialize};
 
-use crate::base::{log, anyhow};
+use crate::aoc::{log, anyhow};
 use anyhow::Context;
 
 use crate::model::{Word, Number, RegisterId, ArgumentValue, Instruction};

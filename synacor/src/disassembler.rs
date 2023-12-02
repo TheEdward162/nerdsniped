@@ -1,7 +1,7 @@
 use std::{io::Write, fmt::Write as FmtWrite, collections::HashMap, ops::RangeInclusive};
 
 use crate::{
-	base::anyhow,
+	aoc::anyhow,
 	model::{Word, Instruction, ArgumentValue}
 };
 

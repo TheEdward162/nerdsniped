@@ -3,10 +3,10 @@ use std::{fmt, collections::HashMap, io::Read};
 
 use anyhow::Context;
 
-use aoc_commons as base;
-use base::{anyhow, log};
+use aoc_commons as aoc;
+use aoc::{anyhow, log};
 
-use base::{
+use aoc::{
 	combinatorics::Combinations,
 	perfect_hash::{BitHash64Assigner, BitHash64, BitHashSet64},
 	macros::FromStrToTryFromAdapter
@@ -205,7 +205,7 @@ const MAX_MINUTES: Time = 30;
 const MAX_MINUTES2: Time = 26;
 
 fn main() -> anyhow::Result<()> {
-	let mut file = base::initialize()?;
+	let mut file = aoc::initialize()?;
 
 	let mut input = String::new();
 	file.read_to_string(&mut input).context("Failed to read input file")?;
@@ -218,7 +218,7 @@ fn main() -> anyhow::Result<()> {
 		let start = assigner.assign(START_VALVE)?;
 
 		for line in input.split('\n').filter(|s| !s.is_empty()) {
-			let (name, rate, reachable) = base::match_tokens!(
+			let (name, rate, reachable) = aoc::match_tokens!(
 				line.split([' ', '=', ',', ';']).filter(|s| !s.is_empty());
 				"Valve", name: NodeName, "has", "flow", "rate", rate: FromStrToTryFromAdapter<Pressure> {.0},
 				"tunnel" | "tunnels", "leads" | "lead", "to", "valve" | "valves", ...reachable: Vec<NodeName>

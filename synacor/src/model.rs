@@ -1,6 +1,6 @@
 use std::{convert::TryFrom, ops::{Add, Mul, Rem, BitAnd, BitOr, Not}, fmt};
 
-use crate::base::{anyhow, log};
+use crate::aoc::{anyhow, log};
 
 pub type Word = u16;
 

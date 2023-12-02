@@ -5,8 +5,8 @@ use std::{
 
 use anyhow::Context;
 
-use aoc_commons as base;
-use base::{
+use aoc_commons as aoc;
+use aoc::{
 	anyhow,
 	log
 };
@@ -169,7 +169,7 @@ impl fmt::Display for SnafuNumber {
 }
 
 fn main() -> anyhow::Result<()> {
-	let mut file = base::initialize()?;
+	let mut file = aoc::initialize()?;
 
 	let mut input = String::new();
 	file.read_to_string(&mut input).context("Failed to read input file")?;

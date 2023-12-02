@@ -6,8 +6,8 @@ use std::{
 
 use anyhow::Context;
 
-use aoc_commons as base;
-use base::{anyhow, log};
+use aoc_commons as aoc;
+use aoc::{anyhow, log};
 
 type Time = usize;
 
@@ -299,16 +299,16 @@ impl Factory {
 }
 
 fn main() -> anyhow::Result<()> {
-	let mut file = base::initialize()?;
+	let mut file = aoc::initialize()?;
 
 	let mut input = String::new();
 	file.read_to_string(&mut input).context("Failed to read input file")?;
 
 	let mut blueprints = Vec::<Blueprint>::new();
 	for line in input.lines().filter(|s| !s.is_empty()) {
-		type Num = base::macros::FromStrToTryFromAdapter<usize>;
+		type Num = aoc::macros::FromStrToTryFromAdapter<usize>;
 
-		let (id, ore_ore, clay_ore, obsidian_ore, obsidian_clay, geode_ore, geode_obsidian) = base::match_tokens!(
+		let (id, ore_ore, clay_ore, obsidian_ore, obsidian_clay, geode_ore, geode_obsidian) = aoc::match_tokens!(
 			line.split([' ', ':', '.']).filter(|s| !s.is_empty());
 			"Blueprint", id: Num {.0},
 			"Each", "ore", "robot", "costs", ore_ore: Num {.0}, "ore",

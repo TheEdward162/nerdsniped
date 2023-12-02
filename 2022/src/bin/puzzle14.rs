@@ -2,10 +2,10 @@ use std::{io::Read, fmt};
 
 use anyhow::Context;
 
-use aoc_commons as base;
-use base::{anyhow, log};
+use aoc_commons as aoc;
+use aoc::{anyhow, log};
 
-use base::{
+use aoc::{
 	geometry::{Grid2, Point, Rectangle},
 	macros::FromStrToTryFromAdapter
 };
@@ -113,7 +113,7 @@ fn simulate(mut map: Grid2<Cell>) -> anyhow::Result<()> {
 }
 
 fn main() -> anyhow::Result<()> {
-	let mut file = base::initialize()?;
+	let mut file = aoc::initialize()?;
 
 	let mut input = String::new();
 	file.read_to_string(&mut input).context("Failed to read input file")?;
@@ -123,7 +123,7 @@ fn main() -> anyhow::Result<()> {
 		let mut points = Vec::new();
 		
 		for point_str in line.split(" -> ") {
-			let (x, y) = base::match_tokens!(point_str.split(','); x: FromStrToTryFromAdapter<isize>, y: FromStrToTryFromAdapter<isize>)?;
+			let (x, y) = aoc::match_tokens!(point_str.split(','); x: FromStrToTryFromAdapter<isize>, y: FromStrToTryFromAdapter<isize>)?;
 			points.push(Point2::new(x.0, y.0));
 		}
 

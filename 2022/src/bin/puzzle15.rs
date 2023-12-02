@@ -2,10 +2,10 @@ use std::{collections::HashSet, io::Read};
 
 use anyhow::Context;
 
-use aoc_commons as base;
-use base::{anyhow, log};
+use aoc_commons as aoc;
+use aoc::{anyhow, log};
 
-use base::{
+use aoc::{
 	geometry::{Point, Rectangle, Circle2},
 	macros::FromStrToTryFromAdapter
 };
@@ -20,7 +20,7 @@ const DISTRESS_BOUNDARIES: Rectangle2 = Rectangle2 {
 };
 
 fn main() -> anyhow::Result<()> {
-	let mut file = base::initialize()?;
+	let mut file = aoc::initialize()?;
 
 	let mut input = String::new();
 	file.read_to_string(&mut input).context("Failed to read input file")?;
@@ -28,7 +28,7 @@ fn main() -> anyhow::Result<()> {
 	let mut beacons_and_sensors = HashSet::<Point2>::new();
 	let mut circles = Vec::<Circle2>::new();
 	for line in input.split('\n').filter(|s| !s.is_empty()) {
-		let (sx, sy, bx, by) = base::match_tokens!(
+		let (sx, sy, bx, by) = aoc::match_tokens!(
 			line.split([' ', '=', ',', ':']).filter(|s| !s.is_empty());
 			"Sensor", "at",
 			"x", sx: FromStrToTryFromAdapter<isize>,

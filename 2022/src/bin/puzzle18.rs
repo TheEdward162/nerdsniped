@@ -5,12 +5,10 @@ use std::{
 
 use anyhow::Context;
 
-use aoc_commons as base;
-use base::{anyhow, log};
+use aoc_commons as aoc;
+use aoc::{anyhow, log};
 
-use base::{
-	geometry::{Point, Rectangle}
-};
+use aoc::geometry::{Point, Rectangle};
 
 type Point3 = Point<3>;
 type Rectangle3 = Rectangle<3>;
@@ -68,7 +66,7 @@ fn count_reachable(
 }
 
 fn main() -> anyhow::Result<()> {
-	let mut file = base::initialize()?;
+	let mut file = aoc::initialize()?;
 
 	let mut input = String::new();
 	file.read_to_string(&mut input).context("Failed to read input file")?;
@@ -77,11 +75,11 @@ fn main() -> anyhow::Result<()> {
 	let mut bounding_box = Rectangle3 { min: Point3::MAX, max: Point3::MIN };
 
 	for line in input.lines().filter(|s| !s.is_empty()) {
-		let (x, y, z) = base::match_tokens!(
+		let (x, y, z) = aoc::match_tokens!(
 			line.split(',');
-			x: base::macros::FromStrToTryFromAdapter<isize>,
-			y: base::macros::FromStrToTryFromAdapter<isize>,
-			z: base::macros::FromStrToTryFromAdapter<isize>
+			x: aoc::macros::FromStrToTryFromAdapter<isize>,
+			y: aoc::macros::FromStrToTryFromAdapter<isize>,
+			z: aoc::macros::FromStrToTryFromAdapter<isize>
 		)?;
 
 		let current = Point3::new(x.0, y.0, z.0);

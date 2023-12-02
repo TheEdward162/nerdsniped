@@ -5,8 +5,8 @@ use std::{
 
 use anyhow::Context;
 
-use aoc_commons as base;
-use base::{
+use aoc_commons as aoc;
+use aoc::{
 	anyhow,
 	log,
 	geometry::{Point, Rectangle, Grid2}
@@ -268,7 +268,7 @@ fn find_path(grid: &mut Grid2<Cell>, blizzards: &mut [Blizzard], start: Point2, 
 }
 
 fn main() -> anyhow::Result<()> {
-	let mut file = base::initialize()?;
+	let mut file = aoc::initialize()?;
 
 	let mut input = String::new();
 	file.read_to_string(&mut input).context("Failed to read input file")?;

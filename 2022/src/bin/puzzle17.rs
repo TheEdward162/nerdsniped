@@ -2,10 +2,10 @@ use std::{fmt, io::Read};
 
 use anyhow::Context;
 
-use aoc_commons as base;
-use base::{anyhow, log};
+use aoc_commons as aoc;
+use aoc::{anyhow, log};
 
-use base::geometry::Point;
+use aoc::geometry::Point;
 
 type Point2 = Point<2>;
 
@@ -286,7 +286,7 @@ const MAX_ROUNDS: usize = 2022;
 const MAX_ROUNDS2: usize = 1000000000000;
 
 fn main() -> anyhow::Result<()> {
-	let mut file = base::initialize()?;
+	let mut file = aoc::initialize()?;
 
 	let mut input = String::new();
 	file.read_to_string(&mut input).context("Failed to read input file")?;

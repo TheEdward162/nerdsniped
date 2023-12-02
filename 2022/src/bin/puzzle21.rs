@@ -4,8 +4,8 @@ use std::{
 
 use anyhow::Context;
 
-use aoc_commons as base;
-use base::{anyhow, log};
+use aoc_commons as aoc;
+use aoc::{anyhow, log};
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
 struct MonkeyName([u8; 4]);
@@ -119,22 +119,22 @@ const ROOT_MONKEY: MonkeyName = MonkeyName([b'r', b'o', b'o', b't']);
 const HUMAN_MONKEY: MonkeyName = MonkeyName([b'h', b'u', b'm', b'n']);
 
 fn main() -> anyhow::Result<()> {
-	let mut file = base::initialize()?;
+	let mut file = aoc::initialize()?;
 
 	let mut input = String::new();
 	file.read_to_string(&mut input).context("Failed to read input file")?;
 
 	let mut monkeys: HashMap<MonkeyName, Monkey> = HashMap::new();
 	for line in input.lines().filter(|s| !s.is_empty()) {
-		if let Ok((name, left, op, right)) = base::match_tokens!(
+		if let Ok((name, left, op, right)) = aoc::match_tokens!(
 			line.split([' ', ':']).filter(|s| !s.is_empty()); name: MonkeyName, left: MonkeyName, op: Operation, right: MonkeyName
 		) {
 			monkeys.insert(name, Monkey::Compute { left, op, right });
 			continue;
 		}
 
-		if let Ok((name, value)) = base::match_tokens!(
-			line.split([' ', ':']).filter(|s| !s.is_empty()); name: MonkeyName, value: base::macros::FromStrToTryFromAdapter<isize> {.0}
+		if let Ok((name, value)) = aoc::match_tokens!(
+			line.split([' ', ':']).filter(|s| !s.is_empty()); name: MonkeyName, value: aoc::macros::FromStrToTryFromAdapter<isize> {.0}
 		) {
 			monkeys.insert(name, Monkey::Value(value));
 			continue;

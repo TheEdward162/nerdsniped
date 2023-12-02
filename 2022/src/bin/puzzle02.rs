@@ -2,8 +2,8 @@ use std::io::Read;
 
 use anyhow::Context;
 
-use aoc_commons as base;
-use base::anyhow;
+use aoc_commons as aoc;
+use aoc::anyhow;
 
 #[derive(Debug)]
 enum GamePlay {
@@ -89,7 +89,7 @@ fn play(them: &GamePlay, us: &GamePlay) -> GameOutcome {
 }
 
 fn main() -> anyhow::Result<()> {
-	let mut file = base::initialize()?;
+	let mut file = aoc::initialize()?;
 
 	let mut input = String::new();
 	file.read_to_string(&mut input).context("Failed to read input file")?;
