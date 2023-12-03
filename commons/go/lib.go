@@ -65,7 +65,7 @@ func Initialize() (io.Reader, error) {
 		return nil, err
 	}
 
-	log.SetFlags(log.Lmicroseconds | log.Lshortfile)
+	log.SetFlags(log.Lmicroseconds) // | log.Lshortfile
 	logLevel = cli.LogLevel
 	if logLevel == LogLevelOff {
 		log.SetOutput(io.Discard)
