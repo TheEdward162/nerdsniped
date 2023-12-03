@@ -5,6 +5,7 @@ import (
 	"os"
 	"io"
 	"log"
+	"fmt"
 )
 
 const (
@@ -65,7 +66,7 @@ func Initialize() (io.Reader, error) {
 		return nil, err
 	}
 
-	log.SetFlags(log.Lmicroseconds) // | log.Lshortfile
+	log.SetFlags(log.Lmicroseconds | log.Lshortfile)
 	logLevel = cli.LogLevel
 	if logLevel == LogLevelOff {
 		log.SetOutput(io.Discard)
@@ -83,26 +84,26 @@ func Initialize() (io.Reader, error) {
 
 func LogError(format string, a ...any) {
 	if logLevel >= LogLevelError {
-		log.Printf(format, a...)
+		log.Output(2, fmt.Sprintf("[E] " + format, a...))
 	}
 }
 func LogWarn(format string, a ...any) {
 	if logLevel >= LogLevelWarn {
-		log.Printf(format, a...)
+		log.Output(2, fmt.Sprintf("[W] " + format, a...))
 	}
 }
 func LogInfo(format string, a ...any) {
 	if logLevel >= LogLevelInfo {
-		log.Printf(format, a...)
+		log.Output(2, fmt.Sprintf("[I] " + format, a...))
 	}
 }
 func LogDebug(format string, a ...any) {
 	if logLevel >= LogLevelDebug {
-		log.Printf(format, a...)
+		log.Output(2, fmt.Sprintf("[D] " + format, a...))
 	}
 }
 func LogTrace(format string, a ...any) {
 	if logLevel >= LogLevelTrace {
-		log.Printf(format, a...)
+		log.Output(2, fmt.Sprintf("[T] " + format, a...))
 	}
 }
