@@ -5,25 +5,11 @@ import (
 	"fmt"
 	"bufio"
 	"strings"
-	"strconv"
 	"math"
 	"cmp"
 	"slices"
 	"golang.org/x/exp/constraints"
 )
-
-func parseNumbersList(t string) []int {
-	result := make([]int, 0)
-
-	for _, s := range strings.Split(t, " ") {
-		value, err := strconv.Atoi(s)
-		if err == nil {
-			result = append(result, value)
-		}
-	}
-
-	return result
-}
 
 type Range[T constraints.Integer | constraints.Float] struct {
 	Start T
@@ -279,7 +265,7 @@ func main() {
 
 		// seeds line
 		if strings.HasPrefix(t, "seeds:") {
-			seeds = parseNumbersList(strings.Split(t, ":")[1])
+			seeds = aoc.ParseIntList(strings.Split(t, ":")[1])
 			continue
 		}
 
@@ -295,7 +281,7 @@ func main() {
 		}
 
 		// other lines are mappings for the current conversion map
-		nums := parseNumbersList(t)
+		nums := aoc.ParseIntList(t)
 		conversions[currentMap].insertMapping(nums[0], nums[1], nums[2])
 	}
 	aoc.LogDebug("seeds = %v\nconversions = %v\n", seeds, conversions)

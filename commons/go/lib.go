@@ -6,6 +6,8 @@ import (
 	"io"
 	"log"
 	"fmt"
+	"strings"
+	"strconv"
 )
 
 const (
@@ -106,4 +108,17 @@ func LogTrace(format string, a ...any) {
 	if logLevel >= LogLevelTrace {
 		log.Output(2, fmt.Sprintf("[T] " + format, a...))
 	}
+}
+
+func ParseIntList(t string) []int {
+	result := make([]int, 0)
+
+	for _, s := range strings.Split(t, " ") {
+		value, err := strconv.Atoi(s)
+		if err == nil {
+			result = append(result, value)
+		}
+	}
+
+	return result
 }

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"bufio"
 	"strings"
-	"strconv"
 	"math"
 	"k8s.io/apimachinery/pkg/util/sets"
 )
@@ -13,11 +12,9 @@ import (
 func parseNumbersSet(t string) sets.Set[int] {
 	result := sets.Set[int]{}
 
-	for _, s := range strings.Split(t, " ") {
-		value, err := strconv.Atoi(s)
-		if err == nil {
-			sets.Insert(result, value)
-		}
+	list := aoc.ParseIntList(t)
+	for _, v := range list {
+		sets.Insert(result, v)
 	}
 
 	return result
