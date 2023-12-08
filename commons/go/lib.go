@@ -122,3 +122,25 @@ func ParseIntList(t string) []int {
 
 	return result
 }
+
+func gcd(a int, b int) int {
+	if (b == 0) { return a }
+	return gcd(b, a % b)
+}
+func GreatestCommonDivisor(a int, nums ...int) int {
+	var r = a
+	for _, b := range nums {
+		r = gcd(r, b)
+	}
+
+	return r
+}
+func LeastCommonMultiple(a int, nums ...int) int {
+	var r = a
+	var g = GreatestCommonDivisor(a, nums...)
+	for _, b := range nums {
+		r = r * b / g
+	}
+	
+	return r
+}
