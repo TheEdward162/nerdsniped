@@ -29,8 +29,8 @@ func (m *MoveSequence) NextMove() (int, int) {
 	m.offset = (m.offset + 1) % len(m.moves)
 
 	switch move {
-		case 'L': return i, MoveLeft
-		case 'R': return i, MoveRight
+		case 'L': return m.offset, MoveLeft
+		case 'R': return m.offset, MoveRight
 		default: panic("invalid move")
 	}
 }
@@ -66,7 +66,7 @@ func FindCycle(nodeMap map[string]MapNode, sequence *MoveSequence, start string)
 	// history of visited nodes
 	var history = make([]HistoryEntry, 0)
 	var currentNode = start
-	var totalSteps = 0
+	history = append(history, HistoryEntry{0, currentNode})
 	for {
 		var step, move = sequence.NextMove()
 		currentNode = NextNode(nodeMap[currentNode], move)
@@ -75,11 +75,10 @@ func FindCycle(nodeMap map[string]MapNode, sequence *MoveSequence, start string)
 		var cycleStart = slices.Index(history, entry)
 		if cycleStart >= 0 {
 			result.Prefix = cycleStart
-			result.Period = totalSteps - history[cycleStart].Step
+			result.Period = len(history) - history[cycleStart].Step
 			break
 		}
 		history = append(history, entry)
-		totalSteps += 1
 	}
 
 	for _, e := range history {
