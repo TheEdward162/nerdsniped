@@ -149,7 +149,7 @@ func main() {
 	for _, g := range ghostPaths {
 		periods = append(periods, g.Cycle.Period)
 	}
-	aoc.LogInfo("lcm: %v\n", aoc.LeastCommonMultiple(periods[0], periods[1:]...))
+	result2 = aoc.LeastCommonMultiple(periods[0], periods[1:]...)
 
 	fmt.Println(result, result2)
 }

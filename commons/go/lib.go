@@ -137,9 +137,8 @@ func GreatestCommonDivisor(a int, nums ...int) int {
 }
 func LeastCommonMultiple(a int, nums ...int) int {
 	var r = a
-	var g = GreatestCommonDivisor(a, nums...)
 	for _, b := range nums {
-		r = r * b / g
+		r = r * b / GreatestCommonDivisor(r, b)
 	}
 	
 	return r
