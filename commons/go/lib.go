@@ -84,6 +84,9 @@ func Initialize() (io.Reader, error) {
 	return file, nil
 }
 
+func LogEnabled(level int) bool {
+	return level <= logLevel
+}
 func LogError(format string, a ...any) {
 	if logLevel >= LogLevelError {
 		log.Output(2, fmt.Sprintf("[E] " + format, a...))
@@ -142,4 +145,9 @@ func LeastCommonMultiple(a int, nums ...int) int {
 	}
 	
 	return r
+}
+
+type PointI2 struct {
+	X int
+	Y int
 }
