@@ -151,6 +151,15 @@ type PointI2 struct {
 	X int
 	Y int
 }
+func (a PointI2) DistanceManhattan(b PointI2) int {
+	var x = a.X - b.X
+	var y = a.Y - b.Y
+	if x < 0 { x = -x }
+	if y < 0 { y = -y }
+
+	return x + y
+}
+
 type Grid[T any] struct {
 	grid [][]T
 }
@@ -199,11 +208,18 @@ func (g *Grid[T]) AddRow(y int, r []T) {
 		g.grid = append(g.grid, r)
 	} else {
 		var tmp = append(g.grid[:y], r)
-		g.grid = append(tmp, g.grid[y + 1:]...)
+		g.grid = append(tmp, g.grid[y:]...)
 	}
 }
 func (g *Grid[T]) AddColumn(x int, c []T) {
-	panic("todo")
+	for y := 0; y < g.Height(); y += 1 {
+		if x >= g.Width(y) {
+			g.grid[y] = append(g.grid[y], c[y])
+		} else {
+			var tmp = append(g.grid[y][:x], c[y])
+			g.grid[y] = append(tmp, g.grid[y][x:]...)
+		}
+	}
 }
 func (g *Grid[T]) FmtDebug(fmtTile func(T) string) string {
 	var result = ""
