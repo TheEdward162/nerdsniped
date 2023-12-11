@@ -8,6 +8,7 @@ import (
 )
 
 type Point = aoc.PointI2
+type Grid = *aoc.Grid[Tile]
 
 const (
 	// .
@@ -61,18 +62,22 @@ func ParseTile(tile rune) Tile {
 		default: panic("invalid tile")
 	}
 }
-func PrintTile(tile Tile) rune {
+func PrintTile(tile Tile) string {
+	var result rune
+
 	switch tile.Type {
-		case TilePipeNS: return '┃' // '|'
-		case TilePipeEW: return '━' // '-'
-		case TilePipeNE: return '┗' // 'L'
-		case TilePipeNW: return '┛' // 'J'
-		case TilePipeSW: return '┓' // '7'
-		case TilePipeSE: return '┏' // 'F'
-		case TileGround: return '.'
-		case TileStart: return 'S'
-		default: return rune(tile.Type)
+		case TilePipeNS: result = '┃' // '|'
+		case TilePipeEW: result = '━' // '-'
+		case TilePipeNE: result = '┗' // 'L'
+		case TilePipeNW: result = '┛' // 'J'
+		case TilePipeSW: result = '┓' // '7'
+		case TilePipeSE: result = '┏' // 'F'
+		case TileGround: result = '.'
+		case TileStart: result = 'S'
+		default: result = rune(tile.Type)
 	}
+
+	return string(result)
 }
 func (t Tile) ConnectsTo(direction int) bool {
 	switch direction {
@@ -84,42 +89,19 @@ func (t Tile) ConnectsTo(direction int) bool {
 	}
 }
 
-func GetTile(ground [][]Tile, p Point) Tile {
-	if p.Y < 0 || p.Y >= len(ground) {
-		return Tile{TileGround}
-	}
-
-	for p.X < 0 || p.X >= len(ground[p.Y]) {
-		return Tile{TileGround}
-	}
-
-	return ground[p.Y][p.X]
-}
-func SetTile(ground [][]Tile, p Point, v Tile) {
-	if p.Y < 0 || p.Y >= len(ground) {
-		return
-	}
-
-	for p.X < 0 || p.X >= len(ground[p.Y]) {
-		return
-	}
-
-	ground[p.Y][p.X] = v
-}
-
-func CleanupTile(ground [][]Tile, p Point) bool {
+func CleanupTile(ground Grid, p Point) bool {
 	var anyChanges = false
 	
 	// north, east, south, west
 	var around = [4]Tile{
-		GetTile(ground, MoveDir(p, DirectionNorth)),
-		GetTile(ground, MoveDir(p, DirectionEast)),
-		GetTile(ground, MoveDir(p, DirectionSouth)),
-		GetTile(ground, MoveDir(p, DirectionWest)),
+		ground.Get(MoveDir(p, DirectionNorth)),
+		ground.Get(MoveDir(p, DirectionEast)),
+		ground.Get(MoveDir(p, DirectionSouth)),
+		ground.Get(MoveDir(p, DirectionWest)),
 	}
 
 	// find start tile type
-	if GetTile(ground, p).Type == TileStart {
+	if ground.Get(p).Type == TileStart {
 		// compute start tile orientation
 		var north = around[DirectionNorth].ConnectsTo(DirectionSouth)
 		var east = around[DirectionEast].ConnectsTo(DirectionWest)
@@ -135,17 +117,17 @@ func CleanupTile(ground [][]Tile, p Point) bool {
 			case south && west: startType = TilePipeSW
 			case east && west: startType = TilePipeEW
 		}
-		SetTile(ground, p, Tile{startType})
+		ground.Set(p, Tile{startType})
 		anyChanges = true
 		aoc.LogDebug("start type = %v\n", startType)
 	} else {
 		// clean up tiles which are clearly not a loop
-		var northMismatch = GetTile(ground, p).ConnectsTo(DirectionNorth) && !around[DirectionNorth].ConnectsTo(DirectionSouth)
-		var eastMismatch = GetTile(ground, p).ConnectsTo(DirectionEast) && !around[DirectionEast].ConnectsTo(DirectionWest)
-		var southMismatch = GetTile(ground, p).ConnectsTo(DirectionSouth) && !around[DirectionSouth].ConnectsTo(DirectionNorth)
-		var westMismatch = GetTile(ground, p).ConnectsTo(DirectionWest) && !around[DirectionWest].ConnectsTo(DirectionEast)
+		var northMismatch = ground.Get(p).ConnectsTo(DirectionNorth) && !around[DirectionNorth].ConnectsTo(DirectionSouth)
+		var eastMismatch = ground.Get(p).ConnectsTo(DirectionEast) && !around[DirectionEast].ConnectsTo(DirectionWest)
+		var southMismatch = ground.Get(p).ConnectsTo(DirectionSouth) && !around[DirectionSouth].ConnectsTo(DirectionNorth)
+		var westMismatch = ground.Get(p).ConnectsTo(DirectionWest) && !around[DirectionWest].ConnectsTo(DirectionEast)
 		if northMismatch || eastMismatch || southMismatch || westMismatch {
-			SetTile(ground, p, Tile{TileGround})
+			ground.Set(p, Tile{TileGround})
 			anyChanges = true
 		}
 	}
@@ -153,16 +135,12 @@ func CleanupTile(ground [][]Tile, p Point) bool {
 	return anyChanges
 }
 
-func DebugGround(ground [][]Tile) {
+func DebugGround(ground Grid) {
 	if aoc.LogEnabled(aoc.LogLevelDebug) {
-		aoc.LogDebug("ground:\n")
-		for y := 0; y < len(ground); y += 1 {
-			var rowDebug string
-			for x := 0; x < len(ground[y]); x += 1 {
-				rowDebug = rowDebug + string(PrintTile(ground[y][x]))
-			}
-			aoc.LogDebug("%s\n", rowDebug)
-		}
+		aoc.LogDebug(
+			"ground:\n%s",
+			ground.FmtDebug(PrintTile),
+		)
 	}
 }
 
@@ -174,7 +152,7 @@ func main() {
 	var result2 = 0
 
 	var start Point
-	var ground = make([][]Tile, 0)
+	var ground Grid = aoc.MakeGrid[Tile]()
 
 	scanner := bufio.NewScanner(input)
 	for scanner.Scan() {
@@ -186,11 +164,11 @@ func main() {
 		for x, r := range t {
 			var tile = ParseTile(r)
 			if tile.Type == TileStart {
-				start = Point{x, len(ground)}
+				start = Point{x, ground.Height()}
 			}
 			row = append(row, tile)
 		}
-		ground = append(ground, row)
+		ground.AddRow(ground.Height(), row)
 	}
 	aoc.LogInfo("start = %v\n", start)
 
@@ -199,8 +177,8 @@ func main() {
 	// turns out we don't need this, but it was fun anyway
 	for {
 		var anyChanges = false
-		for y := 0; y < len(ground); y += 1 {
-			for x := 0; x < len(ground[y]); x += 1 {
+		for y := 0; y < ground.Height(); y += 1 {
+			for x := 0; x < ground.Width(y); x += 1 {
 				anyChanges = anyChanges || CleanupTile(ground, Point{x, y})
 			}
 		}
@@ -220,7 +198,7 @@ func main() {
 		for i := 0; i < len(active); i += 1 {
 			for d := DirectionNorth; d <= DirectionWest; d += 1 {
 				var nextP = MoveDir(active[i], d)
-				if GetTile(ground, active[i]).ConnectsTo(d) && !seen.Has(nextP) {
+				if ground.Get(active[i]).ConnectsTo(d) && !seen.Has(nextP) {
 					active[i] = nextP
 					updated = true
 					break
@@ -234,22 +212,12 @@ func main() {
 		result += 1
 	}
 
-	// mark seen tiles (mostly for visual effect) and run part 2
-	// for t, _ := range seen {
-	// 	var tile = GetTile(ground, t)
-	// 	if tile.ConnectsTo(DirectionNorth) || tile.ConnectsTo(DirectionSouth) {
-	// 		SetTile(ground, t, Tile{TileMarkSwitch})
-	// 	} else {
-	// 		SetTile(ground, t, Tile{TileMarkHold})
-	// 	}
-	// }
-
-	for y := 0; y < len(ground); y += 1 {
+	for y := 0; y < ground.Height(); y += 1 {
 		var rowCameFrom = DirectionNone
 		var outside = true
-		for x := 0; x < len(ground[y]); x += 1 {
+		for x := 0; x < ground.Width(y); x += 1 {
 			var p = Point{x, y}
-			var tile = GetTile(ground, p)
+			var tile = ground.Get(p)
 
 			if seen.Has(p) {
 				switch tile.Type {
@@ -283,9 +251,9 @@ func main() {
 			} else {
 				if !outside {
 					result2 += 1
-					SetTile(ground, Point{x, y}, Tile{'.'})
+					ground.Set(Point{x, y}, Tile{'.'})
 				} else {
-					SetTile(ground, Point{x, y}, Tile{' '})
+					ground.Set(Point{x, y}, Tile{' '})
 				}
 			}
 		}

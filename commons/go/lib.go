@@ -151,3 +151,70 @@ type PointI2 struct {
 	X int
 	Y int
 }
+type Grid[T any] struct {
+	grid [][]T
+}
+func MakeGrid[T any]() *Grid[T] {
+	var g = new(Grid[T])
+	g.grid = make([][]T, 0)
+	return g
+}
+func (g *Grid[T]) Width(y int) int {
+	return len(g.grid[y])
+}
+func (g *Grid[T]) Height() int {
+	return len(g.grid)
+}
+func (g *Grid[T]) Get(p PointI2) T {
+	var zero T
+	if p.Y < 0 || p.Y >= g.Height() {
+		return zero
+	}
+
+	for p.X < 0 || p.X >= g.Width(p.Y) {
+		return zero
+	}
+
+	return g.grid[p.Y][p.X]
+}
+func (g *Grid[T]) GetRow(y int) []T {
+	return g.grid[y]
+}
+func (g *Grid[T]) Set(p PointI2, v T) {
+	if p.Y < 0 || p.Y >= g.Height() {
+		return
+	}
+
+	for p.X < 0 || p.X >= g.Width(p.Y) {
+		return
+	}
+
+	g.grid[p.Y][p.X] = v
+}
+func (g *Grid[T]) SetRow(y int, r []T) {
+	g.grid[y] = r
+}
+func (g *Grid[T]) AddRow(y int, r []T) {
+	if y >= g.Height() {
+		g.grid = append(g.grid, r)
+	} else {
+		var tmp = append(g.grid[:y], r)
+		g.grid = append(tmp, g.grid[y + 1:]...)
+	}
+}
+func (g *Grid[T]) AddColumn(x int, c []T) {
+	panic("todo")
+}
+func (g *Grid[T]) FmtDebug(fmtTile func(T) string) string {
+	var result = ""
+	
+	for y := 0; y < g.Height(); y += 1 {
+		var row string
+		for x := 0; x < g.Width(y); x += 1 {
+			row = row + fmtTile(g.Get(PointI2{x,y}))
+		}
+		result += row + "\n"
+	}
+
+	return result
+}
