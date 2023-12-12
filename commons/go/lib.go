@@ -84,6 +84,8 @@ func Initialize() (io.Reader, error) {
 	return file, nil
 }
 
+/////////////
+// Logging //
 func LogEnabled(level int) bool {
 	return level <= logLevel
 }
@@ -113,10 +115,12 @@ func LogTrace(format string, a ...any) {
 	}
 }
 
-func ParseIntList(t string) []int {
+////////////////////////
+// Parsing and slices //
+func ParseIntListBy(t string, split string) []int {
 	result := make([]int, 0)
 
-	for _, s := range strings.Split(t, " ") {
+	for _, s := range strings.Split(t, split) {
 		value, err := strconv.Atoi(s)
 		if err == nil {
 			result = append(result, value)
@@ -125,7 +129,53 @@ func ParseIntList(t string) []int {
 
 	return result
 }
+func ParseIntList(t string) []int {
+	return ParseIntListBy(t, " ")
+}
+func SplitGroupsFunc[T any](s []T, iseq func(T, T) bool) [][]T {
+	var result = make([][]T, 0)
 
+	if len(s) == 0 {
+		result = append(result, s)
+		return result
+	}
+
+	var runStart = 0
+	var lastElement = s[0]
+	for i, e := range s {
+		if !iseq(e, lastElement) {
+			result = append(result, s[runStart:i])
+			runStart = i
+			lastElement = e
+		}
+	}
+	if runStart < len(s) {
+		result = append(result, s[runStart:])
+	}
+
+	return result
+}
+func SplitGroups[T comparable](s []T) [][]T {
+	return SplitGroupsFunc(s, func (a T, b T) bool { return a == b })
+}
+func ConcatSlices[T any](ss ...[]T) []T {
+	var result = []T(nil)
+	for _, s := range ss {
+		result = append(result, s...)
+	}
+
+	return result
+}
+func AppendCopy[T any](base []T, values ...T) []T {
+	var copy = make([]T, 0, len(base) + len(values))
+	copy = append(copy, base...)
+	copy = append(copy, values...)
+
+	return copy
+}
+
+//////////
+// Math //
 func gcd(a int, b int) int {
 	if (b == 0) { return a }
 	return gcd(b, a % b)
@@ -147,6 +197,21 @@ func LeastCommonMultiple(a int, nums ...int) int {
 	return r
 }
 
+func MaxI(a int, b int) int {
+	if a < b {
+		return b
+	}
+	return a
+}
+func MinI(a int, b int) int {
+	if a > b {
+		return b
+	}
+	return a
+}
+
+//////////////
+// Geometry //
 type PointI2 struct {
 	X int
 	Y int
