@@ -254,6 +254,19 @@ func (g *Grid[T]) Get(p PointI2) T {
 func (g *Grid[T]) GetRow(y int) []T {
 	return g.grid[y]
 }
+func (g *Grid[T]) GetColumn(x int) []T {
+	var result = make([]T, g.Height())
+	for y := 0; y < g.Height(); y += 1 {
+		if x >= g.Width(y) {
+			var zeroT T
+			result = append(result, zeroT)
+		} else {
+			result = append(result, g.grid[y][x])
+		}
+	}
+
+	return result
+}
 func (g *Grid[T]) Set(p PointI2, v T) {
 	if p.Y < 0 || p.Y >= g.Height() {
 		return

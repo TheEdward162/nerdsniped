@@ -23,7 +23,7 @@ func ParseSkyObject(object rune) SkyObject {
 		default: panic("invalid object")
 	}
 }
-func PrintSkyObject(object SkyObject) string {
+func FmtSkyObject(object SkyObject) string {
 	var result rune
 
 	switch object.Type {
@@ -39,7 +39,7 @@ func DebugSky(sky Grid) {
 	if aoc.LogEnabled(aoc.LogLevelDebug) {
 		aoc.LogDebug(
 			"sky:\n%s",
-			sky.FmtDebug(PrintSkyObject),
+			sky.FmtDebug(FmtSkyObject),
 		)
 	}
 }
