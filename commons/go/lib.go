@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"strings"
 	"strconv"
+	"slices"
 )
 
 const (
@@ -224,6 +225,12 @@ func (a PointI2) DistanceManhattan(b PointI2) int {
 
 	return x + y
 }
+func (a PointI2) Add(b PointI2) PointI2 {
+	return PointI2{a.X + b.X, a.Y + b.Y}
+}
+func (a PointI2) Sub(b PointI2) PointI2 {
+	return PointI2{a.X - b.X, a.Y - b.Y}
+}
 
 type Grid[T any] struct {
 	grid [][]T
@@ -232,6 +239,31 @@ func MakeGrid[T any]() *Grid[T] {
 	var g = new(Grid[T])
 	g.grid = make([][]T, 0)
 	return g
+}
+func (g *Grid[T]) Clone() *Grid[T] {
+	var g2 = MakeGrid[T]()
+	for y := 0; y < g.Height(); y += 1 {
+		var row = make([]T, 0)
+		for x := 0; x < g.Width(y); x += 1 {
+			row = append(row, g.Get(PointI2{x, y}))
+		}
+		g2.AddRow(y, row)
+	}
+
+	return g2
+}
+func GridEqual[T comparable](a *Grid[T], b *Grid[T]) bool {
+	if a.Height() != b.Height() {
+		return false
+	}
+	
+	for y := 0; y < a.Height(); y += 1 {
+		if !slices.Equal(a.GetRow(y), b.GetRow(y)) {
+			return false
+		}
+	}
+
+	return true
 }
 func (g *Grid[T]) Width(y int) int {
 	return len(g.grid[y])
