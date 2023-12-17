@@ -2,11 +2,11 @@ package main
 
 import (
 	aoc "aoc_commons"
+	"aoc_commons/pq"
 	"fmt"
 	"bufio"
 	"math"
 	"strconv"
-	"container/heap"
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
@@ -61,6 +61,13 @@ func NextCandidates(grid Grid, c Candidate, minForwardCount int, maxForwardCount
 
 	return r
 }
+func (a Candidate) PQLess(b Candidate) bool {
+	if a.TotalLoss < b.TotalLoss {
+		return true
+	}
+
+	return false
+}
 
 type CandidateSeen struct {
 	Pos Point
@@ -74,12 +81,11 @@ func ToSeen(c Candidate) CandidateSeen {
 func PrioBfs(city Grid, start Point, target Point, minForwardCount int, maxForwardCount int) int {
 	var seen = sets.Set[CandidateSeen]{}
 
-	var current = make(PriorityQueue, 0)
-	heap.Init(&current)
-	heap.Push(&current, &Item{MakeCandidate(start, Point{1, 0}),0})
+	var current = pq.NewPriorityQueue[Candidate]()
+	current.Push(MakeCandidate(start, Point{1, 0}))
 
 	for current.Len() > 0 {
-		var c = heap.Pop(&current).(*Item).value
+		var c = current.Pop()
 		if seen.Has(ToSeen(c)) {
 			continue
 		}
@@ -91,7 +97,7 @@ func PrioBfs(city Grid, start Point, target Point, minForwardCount int, maxForwa
 				return next.TotalLoss
 			} else {
 				if !seen.Has(ToSeen(next)) {
-					heap.Push(&current, &Item{next, 0})
+					current.Push(next)
 					aoc.LogTrace("candidate %+v\n", next)
 				}
 			}
@@ -141,44 +147,6 @@ func main() {
 		10,
 	)
 
+	// 942 1082
 	fmt.Println(result, result2)
-}
-
-
-// lamo suck my dick go
-type Item struct {
-	value Candidate
-	index int
-}
-type PriorityQueue []*Item
-func (pq PriorityQueue) Len() int { return len(pq) }
-func (pq PriorityQueue) Less(i, j int) bool {
-	var a = pq[i].value
-	var b = pq[j].value
-
-	if a.TotalLoss < b.TotalLoss {
-		return true
-	}
-
-	return false
-}
-func (pq PriorityQueue) Swap(i, j int) {
-	pq[i], pq[j] = pq[j], pq[i]
-	pq[i].index = i
-	pq[j].index = j
-}
-func (pq *PriorityQueue) Push(x any) {
-	n := len(*pq)
-	item := x.(*Item)
-	item.index = n
-	*pq = append(*pq, item)
-}
-func (pq *PriorityQueue) Pop() any {
-	old := *pq
-	n := len(old)
-	item := old[n-1]
-	old[n-1] = nil
-	item.index = -1
-	*pq = old[0 : n-1]
-	return item
 }
