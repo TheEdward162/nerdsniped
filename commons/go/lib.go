@@ -231,6 +231,9 @@ func (a PointI2) Add(b PointI2) PointI2 {
 func (a PointI2) Sub(b PointI2) PointI2 {
 	return PointI2{a.X - b.X, a.Y - b.Y}
 }
+func (a PointI2) LenSquared() int {
+	return a.X * a.X + a.Y * a.Y
+}
 
 type Grid[T any] struct {
 	grid [][]T
