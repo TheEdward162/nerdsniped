@@ -64,16 +64,16 @@ func updateBeam(contraption Grid, beam Beam) []Beam {
 		}
 		case ObjectSplitterVertical: {
 			if beam.Dir.X != 0 {
-				nextBeams = append(nextBeams, Beam{beam.Pos, Point{0, beam.Dir.X}})
-				nextBeams = append(nextBeams, Beam{beam.Pos, Point{0, -beam.Dir.X}})
+				nextBeams = append(nextBeams, Beam{beam.Pos, beam.Dir.RotNeg90()})
+				nextBeams = append(nextBeams, Beam{beam.Pos, beam.Dir.Rot90()})
 			} else {
 				nextBeams = append(nextBeams, Beam{beam.Pos.Add(beam.Dir), beam.Dir})
 			}
 		}
 		case ObjectSplitterHorizontal: {
 			if beam.Dir.Y != 0 {
-				nextBeams = append(nextBeams, Beam{beam.Pos, Point{beam.Dir.Y, 0}})
-				nextBeams = append(nextBeams, Beam{beam.Pos, Point{-beam.Dir.Y, 0}})
+				nextBeams = append(nextBeams, Beam{beam.Pos, beam.Dir.RotNeg90()})
+				nextBeams = append(nextBeams, Beam{beam.Pos, beam.Dir.Rot90()})
 			} else {
 				nextBeams = append(nextBeams, Beam{beam.Pos.Add(beam.Dir), beam.Dir})
 			}

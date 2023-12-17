@@ -234,6 +234,12 @@ func (a PointI2) Sub(b PointI2) PointI2 {
 func (a PointI2) LenSquared() int {
 	return a.X * a.X + a.Y * a.Y
 }
+func (a PointI2) Rot90() PointI2 {
+	return PointI2{-a.Y,a.X}
+}
+func (a PointI2) RotNeg90() PointI2 {
+	return PointI2{a.Y,-a.X}
+}
 
 type Grid[T any] struct {
 	grid [][]T
@@ -274,13 +280,20 @@ func (g *Grid[T]) Width(y int) int {
 func (g *Grid[T]) Height() int {
 	return len(g.grid)
 }
-func (g *Grid[T]) Get(p PointI2) T {
-	var zero T
+func (g *Grid[T]) Has(p PointI2) bool {
 	if p.Y < 0 || p.Y >= g.Height() {
-		return zero
+		return false
 	}
 
 	for p.X < 0 || p.X >= g.Width(p.Y) {
+		return false
+	}
+
+	return true
+}
+func (g *Grid[T]) Get(p PointI2) T {
+	var zero T
+	if !g.Has(p) {
 		return zero
 	}
 
@@ -303,11 +316,7 @@ func (g *Grid[T]) GetColumn(x int) []T {
 	return result
 }
 func (g *Grid[T]) Set(p PointI2, v T) {
-	if p.Y < 0 || p.Y >= g.Height() {
-		return
-	}
-
-	for p.X < 0 || p.X >= g.Width(p.Y) {
+	if !g.Has(p) {
 		return
 	}
 
