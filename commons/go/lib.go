@@ -231,6 +231,9 @@ func (a PointI2) Add(b PointI2) PointI2 {
 func (a PointI2) Sub(b PointI2) PointI2 {
 	return PointI2{a.X - b.X, a.Y - b.Y}
 }
+func (a PointI2) Mul(b int) PointI2 {
+	return PointI2{a.X * b, a.Y * b}
+}
 func (a PointI2) LenSquared() int {
 	return a.X * a.X + a.Y * a.Y
 }
@@ -300,6 +303,10 @@ func (g *Grid[T]) Get(p PointI2) T {
 	return g.grid[p.Y][p.X]
 }
 func (g *Grid[T]) GetRow(y int) []T {
+	if y >= g.Height() || y < 0 {
+		return nil
+	}
+
 	return g.grid[y]
 }
 func (g *Grid[T]) GetColumn(x int) []T {
@@ -339,6 +346,22 @@ func (g *Grid[T]) AddColumn(x int, c []T) {
 			g.grid[y] = append(g.grid[y], c[y])
 		} else {
 			var tmp = append(g.grid[y][:x], c[y])
+			g.grid[y] = append(tmp, g.grid[y][x:]...)
+		}
+	}
+}
+func (g *Grid[T]) AddToRow(p PointI2, v T) {
+	var x = p.X
+	var y = p.Y
+	if y >= g.Height() {
+		var s = make([]T, 1)
+		s[0] = v
+		g.AddRow(y, s)
+	} else {
+		if x >= g.Width(y) {
+			g.grid[y] = append(g.grid[y], v)
+		} else {
+			var tmp = append(g.grid[y][:x], v)
 			g.grid[y] = append(tmp, g.grid[y][x:]...)
 		}
 	}
