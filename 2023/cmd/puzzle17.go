@@ -77,7 +77,7 @@ type CandidateSeen struct {
 func ToSeen(c Candidate) CandidateSeen {
 	return CandidateSeen{c.Pos,c.Dir,c.ForwardCount}
 }
-
+// dijkstra
 func PrioBfs(city Grid, start Point, target Point, minForwardCount int, maxForwardCount int) int {
 	var seen = sets.Set[CandidateSeen]{}
 

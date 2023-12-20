@@ -379,3 +379,13 @@ func (g *Grid[T]) FmtDebug(fmtTile func(T) string) string {
 
 	return result
 }
+
+func ShoelaceArea(edges [][2]PointI2) int {
+	var result = 0
+	for _, e := range edges {
+		result += (e[0].Y + e[1].Y) * (e[0].X - e[1].X)
+	}
+	result /= 2
+
+	return result
+}

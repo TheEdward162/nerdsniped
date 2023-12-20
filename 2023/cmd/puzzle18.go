@@ -189,6 +189,31 @@ func solve(commands []DigCommand) int {
 	return CountDug(sparseGround, gridSize.X)
 }
 
+func solveShoelace(commands []DigCommand) int {
+	var edges = make([][2]Point, 0, len(commands))
+	var current = Point{0,0}
+	for i, c := range commands {
+		// if the next command continues in the same direction or goes 90deg counter-clockwise we only take Count steps
+		// otherwise we take Count+1 steps to stay on the outer perimeter
+		var correctForOutsidePerimeter = 0
+		var previousCommand = commands[(i - 1 + len(commands)) % len(commands)]
+		if !(previousCommand.Direction == c.Direction || previousCommand.Direction.RotNeg90() == c.Direction) {
+			correctForOutsidePerimeter += 1
+		}
+		var nextCommand = commands[(i + 1) % len(commands)]
+		if !(c.Direction == nextCommand.Direction || c.Direction.RotNeg90() == nextCommand.Direction) {
+			correctForOutsidePerimeter += 1
+		}
+
+		var end = current.Add(c.Direction.Mul(c.Count + correctForOutsidePerimeter - 1))
+		edges = append(edges, [2]Point{current,end})
+		current = end
+	}
+
+	aoc.LogTrace("shoelace edges %v\n", edges)
+	return aoc.ShoelaceArea(edges)
+}
+
 func main() {
 	var input, err = aoc.Initialize()
 	if err != nil { panic(err) }
@@ -217,8 +242,11 @@ func main() {
 	aoc.LogTrace("commands: %v\n", commands)
 	aoc.LogTrace("commands2: %v\n", commands2)
 
-	result = solve(commands)
-	result2 = solve(commands2)
+	// result = solve(commands)
+	// result2 = solve(commands2)
+
+	result = solveShoelace(commands)
+	result2 = solveShoelace(commands2)
 
 	fmt.Println(result, result2)
 }
