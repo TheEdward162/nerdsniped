@@ -175,6 +175,15 @@ func AppendCopy[T any](base []T, values ...T) []T {
 	return copy
 }
 
+func CloneMap[K comparable, V any](m map[K]V, cloneValue func(V) V) map[K]V {
+	var r = make(map[K]V)
+	for k, v := range m {
+		r[k] = cloneValue(v)
+	}
+
+	return r
+}
+
 //////////
 // Math //
 func gcd(a int, b int) int {
