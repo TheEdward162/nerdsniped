@@ -9,6 +9,7 @@ import (
 	"strings"
 	"strconv"
 	"slices"
+	"golang.org/x/exp/constraints"
 )
 
 const (
@@ -220,6 +221,26 @@ func MinI(a int, b int) int {
 	return a
 }
 
+type Range[T constraints.Integer | constraints.Float] struct {
+	Start T
+	End T
+}
+func MakeRange[T constraints.Integer | constraints.Float](start T, length T) Range[T] {
+	return Range[T]{start, start + length}
+}
+func (r Range[T]) Length() T {
+	return r.End - r.Start
+}
+func (r Range[T]) IsEmpty() bool {
+	return r.Length() <= 0
+}
+func (r Range[T]) Contains(value T) bool {
+	return value >= r.Start && value < r.End
+}
+func (r Range[T]) Intersects(b Range[T]) bool {
+	return b.Start < r.End && b.End > r.Start
+}
+
 //////////////
 // Geometry //
 type PointI2 struct {
@@ -397,4 +418,13 @@ func ShoelaceArea(edges [][2]PointI2) int {
 	result /= 2
 
 	return result
+}
+
+type PointI3 struct {
+	X int
+	Y int
+	Z int
+}
+func (a PointI3) Add(b PointI3) PointI3 {
+	return PointI3{a.X + b.X, a.Y + b.Y, a.Z + b.Z}
 }
