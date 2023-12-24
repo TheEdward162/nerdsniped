@@ -123,7 +123,7 @@ func ParseIntListBy(t string, split string) []int {
 	result := make([]int, 0)
 
 	for _, s := range strings.Split(t, split) {
-		value, err := strconv.Atoi(s)
+		value, err := strconv.Atoi(strings.Trim(s, " "))
 		if err == nil {
 			result = append(result, value)
 		}
@@ -243,11 +243,11 @@ func (r Range[T]) Intersects(b Range[T]) bool {
 
 //////////////
 // Geometry //
-type PointI2 struct {
-	X int
-	Y int
+type Point2[T constraints.Integer | constraints.Float] struct {
+	X T
+	Y T
 }
-func (a PointI2) DistanceManhattan(b PointI2) int {
+func (a Point2[T]) DistanceManhattan(b Point2[T]) T {
 	var x = a.X - b.X
 	var y = a.Y - b.Y
 	if x < 0 { x = -x }
@@ -255,24 +255,25 @@ func (a PointI2) DistanceManhattan(b PointI2) int {
 
 	return x + y
 }
-func (a PointI2) Add(b PointI2) PointI2 {
-	return PointI2{a.X + b.X, a.Y + b.Y}
+func (a Point2[T]) Add(b Point2[T]) Point2[T] {
+	return Point2[T]{a.X + b.X, a.Y + b.Y}
 }
-func (a PointI2) Sub(b PointI2) PointI2 {
-	return PointI2{a.X - b.X, a.Y - b.Y}
+func (a Point2[T]) Sub(b Point2[T]) Point2[T] {
+	return Point2[T]{a.X - b.X, a.Y - b.Y}
 }
-func (a PointI2) Mul(b int) PointI2 {
-	return PointI2{a.X * b, a.Y * b}
+func (a Point2[T]) Mul(b T) Point2[T] {
+	return Point2[T]{a.X * b, a.Y * b}
 }
-func (a PointI2) LenSquared() int {
+func (a Point2[T]) LenSquared() T {
 	return a.X * a.X + a.Y * a.Y
 }
-func (a PointI2) Rot90() PointI2 {
-	return PointI2{-a.Y,a.X}
+func (a Point2[T]) Rot90() Point2[T] {
+	return Point2[T]{-a.Y,a.X}
 }
-func (a PointI2) RotNeg90() PointI2 {
-	return PointI2{a.Y,-a.X}
+func (a Point2[T]) RotNeg90() Point2[T] {
+	return Point2[T]{a.Y,-a.X}
 }
+type PointI2 = Point2[int]
 
 type Grid[T any] struct {
 	grid [][]T
@@ -420,11 +421,18 @@ func ShoelaceArea(edges [][2]PointI2) int {
 	return result
 }
 
-type PointI3 struct {
-	X int
-	Y int
-	Z int
+type Point3[T constraints.Integer | constraints.Float] struct {
+	X T
+	Y T
+	Z T
 }
-func (a PointI3) Add(b PointI3) PointI3 {
-	return PointI3{a.X + b.X, a.Y + b.Y, a.Z + b.Z}
+func (a Point3[T]) Add(b Point3[T]) Point3[T] {
+	return Point3[T]{a.X + b.X, a.Y + b.Y, a.Z + b.Z}
 }
+func (a Point3[T]) Sub(b Point3[T]) Point3[T] {
+	return Point3[T]{a.X - b.X, a.Y - b.Y, a.Z - b.Z}
+}
+func (a Point3[T]) Mul(b T) Point3[T] {
+	return Point3[T]{a.X * b, a.Y * b, a.Z * b}
+}
+type PointI3 = Point3[int]
