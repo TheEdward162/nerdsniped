@@ -1,6 +1,8 @@
 [workspace]
 members = [
 	"commons/rust",
-	"2022",
-	"synacor"
+	"aoc_2022",
+	"synacor",
+	"1brc_2024"
 ]
+resolver = "2"
