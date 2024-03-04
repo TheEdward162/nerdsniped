@@ -24,4 +24,5 @@ Command: `go run ./aoc_2023/cmd/puzzle01.go aoc_2023/inputs/input01.txt`
 
 Language: Rust
 
-Command: `cargo run --package obrc2024 --bin s01`
+Command: `cargo run --package obrc2024 --bin s01 data/measurements.txt`
+Diff results: `git diff -U0 --word-diff --no-index -- -  data/measurements.out.txt`

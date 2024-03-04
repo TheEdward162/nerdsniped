@@ -1,8 +1,8 @@
-//! Baseline Rust
+//! Output writing
 
 use std::{
 	fs::OpenOptions,
-	io::{BufReader, BufRead},
+	io::{BufReader, BufRead, Write},
 	collections::HashMap
 };
 
@@ -66,12 +66,15 @@ fn main() {
 	stations.sort_unstable_by(|a, b| a.0.cmp(&b.0));
 	
 	let mut stations = stations.into_iter();
-	print!("{{");
+	let stdout = std::io::stdout();
+	let mut stdout = stdout.lock();
+
+	write!(&mut stdout, "{{").unwrap();
 	if let Some((name, stats)) = stations.next() {
-		print!("{}={:.1}/{:.1}/{:.1}", name, stats.min, stats.mean(), stats.max);
+		write!(&mut stdout, "{}={:.1}/{:.1}/{:.1}", name, stats.min, stats.mean(), stats.max).unwrap();
 	}
 	for (name, stats) in stations {
-		print!(", {}={:.1}/{:.1}/{:.1}", name, stats.min, stats.mean(), stats.max);
+		write!(&mut stdout, ", {}={:.1}/{:.1}/{:.1}", name, stats.min, stats.mean(), stats.max).unwrap();
 	}
-	println!("}}");
+	writeln!(&mut stdout, "}}").unwrap();
 }

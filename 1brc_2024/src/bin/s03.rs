@@ -1,9 +1,9 @@
-//! Baseline Rust
+//! Don't parse names as strings
 
 use std::{
 	fs::OpenOptions,
 	io::{BufReader, BufRead},
-	collections::HashMap
+	collections::HashMap, ops::Deref
 };
 
 #[derive(Debug)]
@@ -41,9 +41,9 @@ fn main() {
 	let input = OpenOptions::new().read(true).open(&input_path).unwrap();
 	let mut input = BufReader::new(input);
 
-	let mut stats = HashMap::<String, Stats>::new();
+	let mut stats = HashMap::<Box<[u8]>, Stats>::new();
 
-	let mut buf = vec![];
+	let mut buf = Vec::new();
 	loop {
 		buf.clear();
 		let count = input.read_until(b';', &mut buf).unwrap();
@@ -51,8 +51,8 @@ fn main() {
 			break
 		}
 
-		let name = String::from(
-			std::str::from_utf8(&buf[..buf.len() - 1]).unwrap()
+		let name = Box::from(
+			&buf[..buf.len() - 1]
 		);
 		
 		buf.clear();
@@ -62,16 +62,16 @@ fn main() {
 		stats.entry(name).or_default().update(temp);
 	}
 
-	let mut stations: Vec<(String, Stats)> = stats.into_iter().collect();
+	let mut stations: Vec<(_, Stats)> = stats.into_iter().collect();
 	stations.sort_unstable_by(|a, b| a.0.cmp(&b.0));
 	
 	let mut stations = stations.into_iter();
 	print!("{{");
 	if let Some((name, stats)) = stations.next() {
-		print!("{}={:.1}/{:.1}/{:.1}", name, stats.min, stats.mean(), stats.max);
+		print!("{}={:.1}/{:.1}/{:.1}", std::str::from_utf8(name.deref()).unwrap(), stats.min, stats.mean(), stats.max);
 	}
 	for (name, stats) in stations {
-		print!(", {}={:.1}/{:.1}/{:.1}", name, stats.min, stats.mean(), stats.max);
+		print!(", {}={:.1}/{:.1}/{:.1}", std::str::from_utf8(name.deref()).unwrap(), stats.min, stats.mean(), stats.max);
 	}
 	println!("}}");
 }
