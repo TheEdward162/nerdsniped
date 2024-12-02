@@ -26,3 +26,9 @@ Language: Rust
 
 Command: `cargo run --package obrc2024 --bin s01 data/measurements.txt`
 Diff results: `git diff -U0 --word-diff --no-index -- -  data/measurements.out.txt`
+
+## AoC 2024
+
+Language: Terra (Lua)
+
+Command: `terra ./aoc_2024/puzzle01.t aoc_2024/inputs/input01.txt`
