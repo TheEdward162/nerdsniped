@@ -9,14 +9,14 @@ while true do
 		break
 	end
 
-	report_items_str = aoc_string_split_space(line)
-	report_items = aoc_map(tonumber, report_items_str)
+	report_items_str = aoc.string_split_space(line)
+	report_items = aoc.map(tonumber, report_items_str)
 
 	table.insert(input_reports, report_items)
 end
 input_file:close()
 
--- print(aoc_dump(input_reports))
+-- print(aoc.dump(input_reports))
 
 -- Part 1
 function list_diff(list)
@@ -70,7 +70,7 @@ for _, report in pairs(input_reports) do
 		safe_reports_dampened = safe_reports_dampened + 1
 	else
 		for i, _ in ipairs(report) do
-			dampened_report = aoc_splice(report, i, i + 1)
+			dampened_report = aoc.splice(report, i, i + 1)
 			if is_report_safe(dampened_report) then
 				safe_reports_dampened = safe_reports_dampened + 1
 				break
