@@ -26,12 +26,16 @@ function aoc.dump(val, max_depth)
 	return res
 end
 
-function aoc.string_split_space(str)
+function aoc.string_split(delim, str)
 	local res = {}
-	for sub_str in string.gmatch(str, "([^ ]+)") do
+	for sub_str in string.gmatch(str, "([^" ..delim .. "]+)") do
 		table.insert(res, sub_str)
 	end
 	return res
+end
+
+function aoc.string_split_space(str)
+	return aoc.string_split(" ", str)
 end
 
 -- Tables
