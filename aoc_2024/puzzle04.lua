@@ -1,47 +1,11 @@
 require("aoc_2024/libaoc")
+local Vector2 = aoc.Vector2
 
 -- table of rows
-local input_matrix = {}
-
-local input_file = io.open(arg[1], "r")
-while true do
-	line = input_file:read("l")
-	if line == nil then
-		break
-	end
-
-	table.insert(input_matrix, line)
-end
-input_file:close()
+local input_matrix = aoc.read_lines(arg[1])
 
 local height = #input_matrix
 local width = #input_matrix[1]
-
-struct Vector2 {
-	x: double
-	y: double
-}
-terra Vector2:add(rhs: Vector2)
-	return Vector2 { x = self.x + rhs.x, y = self.y + rhs.y }
-end
-terra Vector2:sub(rhs: Vector2)
-	return Vector2 { x = self.x - rhs.x, y = self.y - rhs.y }
-end
-terra Vector2:mul(a: double)
-	return Vector2 { x = self.x * a, y = self.y * a }
-end
-terra Vector2:neg()
-	return self:mul(-1)
-end
-Vector2.new = function(x, y)
-	local v = terralib.new(Vector2)
-	v.x = x
-	v.y = y
-	return v
-end
-Vector2.from_array = function(arr)
-	return Vector2.new(arr[1], arr[2])
-end
 
 local function search_dir(target, matrix, pos, dir)
 	local i = 1
