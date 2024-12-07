@@ -72,6 +72,22 @@ function aoc.keys(tab)
 	return res
 end
 
+function aoc.values(tab)
+	local res = {}
+	for _, v in pairs(tab) do
+		table.insert(res, v)
+	end
+	return res
+end
+
+function aoc.reverse(tab)
+	local res = {}
+	for i = #tab, 1, -1 do
+		table.insert(res, tab[i])
+	end
+	return res
+end
+
 function aoc.invert(tab)
 	local res = {}
 	for k, v in pairs(tab) do
