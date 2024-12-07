@@ -189,7 +189,7 @@ end
 
 function aoc.Enum(...)
 	local t = { type = int }
-	for i,name in ipairs({...}) do
+	for i, name in ipairs({...}) do
 		t[name] = i
 	end
 	return t
