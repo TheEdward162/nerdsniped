@@ -1,5 +1,4 @@
 require("aoc_2024/libaoc")
-ffi = require("ffi")
 
 local C = terralib.includecstring [[
     #include<stdio.h>
@@ -18,79 +17,102 @@ terra uint64_log10(v: uint64)
 	return res
 end
 
+local Operation = aoc.Enum("PLUS", "MULTIPLY", "CONCAT")
+
 local input_lines = aoc.read_lines(arg[1])
 local input_equations = {}
 for _, line in pairs(input_lines) do
 	local split = aoc.string_split_space(line)
-	local result = str_to_uint64(split[1]:sub(1, -2))
+	local result = split[1]:sub(1, -2)
 	split[1] = nil
-	local parameters = aoc.map(str_to_uint64, aoc.values(split))
+	local parameters = aoc.values(split)
 	table.insert(input_equations, { result = result, parameters = parameters })
 end
 
-local Operation = aoc.Enum("PLUS", "MULTIPLY", "CONCAT")
-
-function co_gen_ops(symbols, prefix, n)
-	if n == 0 then
-		coroutine.yield(prefix)
-	else
-		for _, symbol in pairs(symbols) do
-			table.insert(prefix, symbol)
-			co_gen_ops(symbols, prefix, n - 1)
-			table.remove(prefix)
-		end
-	end
-end
-local function gen_ops(symbols, len)
-	return coroutine.wrap(function() return co_gen_ops(symbols, {}, len) end)
-end
-
-local function evaluate(parameters, operations)	
-	local result = parameters[1]
-	for i = 2, #parameters do
-		local op = operations[i - 1]
-		local b = result
-		if op == Operation.PLUS then
-			result = result + parameters[i]
-		elseif op == Operation.MULTIPLY then
-			result = result * parameters[i]
-		elseif op == Operation.CONCAT then
-			for i = 1, uint64_log10(parameters[i]) do
-				result = result * 10ULL
+local function make_evaluator(eq, ops)
+	local function make_leaf(expected_result, previous_result)
+		return quote
+			-- C.printf("Leaf %llu vs %llu\n", [ expected_result ], [ previous_result ])
+			if [ expected_result ] == [ previous_result ] then
+				return [ expected_result ]
 			end
-			result = result + parameters[i]
 		end
-		-- print("evaluate", b, op, parameters[i], result)
 	end
-	return result
+	local function make_intermediate(param, expected_result, previous_result, next_fn)
+		local statements = {}
+		for _, op in pairs(ops) do
+			if op == Operation.PLUS then
+				table.insert(statements, quote
+					var actual_result_plus = [ previous_result ] + [ param ]
+					-- C.printf("Plus %llu + %llu = %llu\n", [ previous_result ], [ param ], actual_result_plus)
+					[ next_fn(expected_result, actual_result_plus) ]
+				end)
+			elseif op == Operation.MULTIPLY then
+				table.insert(statements, quote
+					var actual_result_mult = [ previous_result ] * [ param ]
+					-- C.printf("Mul %llu * %llu = %llu\n", [ previous_result ], [ param ], actual_result_mult)
+					[ next_fn(expected_result, actual_result_mult) ]
+				end)
+			elseif op == Operation.CONCAT then
+				table.insert(statements, quote
+					var actual_result_concat = [ previous_result ]
+					for i = 0, uint64_log10([ param ]) do
+						actual_result_concat = actual_result_concat * 10ULL
+					end
+					actual_result_concat = actual_result_concat + [ param ]
+					-- C.printf("Concat %llu concat %llu = %llu\n", [ previous_result ], [ param ], actual_result_concat)
+					[ next_fn(expected_result, actual_result_concat) ]
+				end)
+			end
+		end
+
+		return statements
+	end
+
+	local expected_result = { ident = symbol(uint64), value = str_to_uint64(eq.result) }
+	local params = {}
+	for _, param in pairs(eq.parameters) do
+		table.insert(params, { ident = symbol(uint64), value = str_to_uint64(param) })
+	end
+
+	local eval_fn = make_leaf
+	for i = 0, #params - 2 do
+		local next_fn = eval_fn
+		eval_fn = function(expected_result, previous_result)
+			return make_intermediate(params[#params - i].ident, expected_result, previous_result, next_fn)
+		end
+	end
+
+	local terra evaluate()
+		var [ expected_result.ident ] = [ expected_result.value ]
+		escape
+			for _, param in pairs(params) do
+				emit quote
+					var [ param.ident ] = [ param.value ]
+				end
+			end
+		end
+
+		[ eval_fn(expected_result.ident, params[1].ident) ]
+
+		return 0
+	end
+	-- print(evaluate:printpretty())
+	return evaluate
 end
 
 -- Part 1
-local correct_sum = 0ULL
-local symbols = { Operation.PLUS, Operation.MULTIPLY }
+local plausible_sum = 0ULL
 for i, eq in ipairs(input_equations) do
-	for ops in gen_ops(symbols, #eq.parameters - 1) do
-		local evaled = evaluate(eq.parameters, ops)
-		if evaled == eq.result then
-			correct_sum = correct_sum + evaled
-			break
-		end
-	end
+	local evaluate = make_evaluator(eq, { Operation.PLUS, Operation.MULTIPLY })
+	plausible_sum = plausible_sum + evaluate()
 end
-print("correct_sum", correct_sum)
+print("plausible_sum", plausible_sum)
 
 -- Part 2
-local correct_sum2 = 0ULL
-local symbols2 = { Operation.PLUS, Operation.MULTIPLY, Operation.CONCAT }
-for i, eq in ipairs(input_equations) do
-	print(i .. "/" .. #input_equations)
-	for ops in gen_ops(symbols2, #eq.parameters - 1) do
-		local evaled = evaluate(eq.parameters, ops)
-		if evaled == eq.result then
-			-- print("evaled", evaled == eq.result, aoc.dump(eq.parameters), aoc.dump(ops), evaled)
-			correct_sum2 = correct_sum2 + evaled
-			break
-		end
-	end
+local plausible_sum2 = 0ULL
+for _, eq in pairs(input_equations) do
+	local evaluate = make_evaluator(eq, { Operation.PLUS, Operation.MULTIPLY, Operation.CONCAT })
+	plausible_sum2 = plausible_sum2 + evaluate()
 end
-print("correct_sum2", correct_sum2)
+print("plausible_sum2", plausible_sum2)
