@@ -173,10 +173,10 @@ terra aoc.Vector2:rot_90()
 	return aoc.Vector2 { x = -self.y, y = self.x }
 end
 aoc.Vector2.new = function(x, y)
-	local v = terralib.new(aoc.Vector2)
-	v.x = x
-	v.y = y
-	return v
+	local vec = terralib.new(aoc.Vector2)
+	vec.x = x
+	vec.y = y
+	return vec
 end
 aoc.Vector2.from_array = function(arr)
 	return aoc.Vector2.new(arr[1], arr[2])
@@ -307,6 +307,13 @@ function aoc.dump(val, max_depth)
 		res = res .. string.format("%q", val)
 	elseif type(val) == "boolean" then
 		res = res .. (res and "true" or "false")
+	elseif type(val) == "cdata" then
+		local ctype = terralib.typeof(val)
+		if type(ctype["dump"]) == "function" then
+			res = ctype.dump(val)
+		else
+			res = res .. "<" .. tostring(ctype) .. ">"
+		end
 	else
 		res = res .. "<" .. type(val) .. ">"
 	end

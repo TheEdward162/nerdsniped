@@ -35,12 +35,12 @@ for name, nodes in pairs(input_nodes) do
 		for j = i + 1, #nodes do
 			local anti1 = antinode(nodes[i], nodes[j], 2.0)
 			if within_bounds(anti1) then
-				antinodes[Vector2.dump(anti1)] = true
+				antinodes[aoc.dump(anti1)] = true
 			end
 
 			local anti2 = antinode(nodes[j], nodes[i], 2.0)
 			if within_bounds(anti2) then
-				antinodes[Vector2.dump(anti2)] = true
+				antinodes[aoc.dump(anti2)] = true
 			end
 		end
 	end
@@ -56,7 +56,7 @@ for name, nodes in pairs(input_nodes) do
 			while true do
 				local anti1 = antinode(nodes[i], nodes[j], f)
 				if within_bounds(anti1) then
-					antinodes2[Vector2.dump(anti1)] = true
+					antinodes2[aoc.dump(anti1)] = true
 				else
 					break
 				end
@@ -67,7 +67,7 @@ for name, nodes in pairs(input_nodes) do
 			while true do
 				local anti2 = antinode(nodes[j], nodes[i], f)
 				if within_bounds(anti2) then
-					antinodes2[Vector2.dump(anti2)] = true
+					antinodes2[aoc.dump(anti2)] = true
 				else
 					break
 				end
