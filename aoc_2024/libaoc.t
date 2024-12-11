@@ -1,3 +1,8 @@
+local C = terralib.includecstring [[
+    #include<stdio.h>
+	#include<math.h>
+]]
+
 aoc = {}
 
 function aoc.read_lines(path)
@@ -29,6 +34,44 @@ end
 
 function aoc.string_split_space(str)
 	return aoc.string_split(" ", str)
+end
+
+terra aoc.tonumber_u64(v: rawstring)
+	var res: uint64
+	C.sscanf(v, "%llu", &res)
+	return res
+end
+uint64.dump = function(self)
+	return tostring(self)
+end
+-- stolen from https://doc.rust-lang.org/src/core/num/int_log10.rs.html
+terra uint64.log10(val: uint64)
+	var log = 0
+    if val >= 10000000000ULL then
+        val = val / 10000000000ULL
+        log = log + 10
+    end
+    if val >= 100000ULL then
+        val = val / 100000ULL
+        log = log + 5
+    end
+
+    var C1: uint32 = 393206
+    var C2: uint32 = 524188
+    var C3: uint32 = 916504
+    var C4: uint32 = 514288
+
+	var val32: uint32 = val
+    var log32 = (
+		((val32 + C1) and (val32 + C2)) ^ ((val32 + C3) and (val32 + C4))
+	) >> 17
+	-- C.printf("val=%llu log=%llu log32=%llu\n", val, log, log32)
+	return log + log32
+end
+-- print(uint64.log10:disas())
+-- Loses precision, but log10l does not work with terra
+terra uint64.log10d(val: uint64)
+	return C.log10(val)
 end
 
 -- Tables
@@ -146,6 +189,22 @@ function aoc.max(tab)
 		function(acc, curr) return math.max(acc, curr) end,
 		tab
 	)
+end
+function aoc.sum(tab)
+	return aoc.fold(
+		function(acc, curr) return acc + curr end,
+		tab
+	)
+end
+
+function aoc.flatten(tab)
+	local res = {}
+	for _, v in pairs(tab) do
+		for _, inner in pairs(v) do
+			table.insert(res, inner)
+		end
+	end
+	return res
 end
 
 -- Vectors and matrices
