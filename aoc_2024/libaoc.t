@@ -36,12 +36,25 @@ function aoc.string_split_space(str)
 	return aoc.string_split(" ", str)
 end
 
+function aoc.string_strip_prefix(prefix, str)
+	if str:sub(1, #prefix) == prefix then
+		return str:sub(#prefix + 1)
+	else
+		return nil
+	end
+end
+
+-- Numbers
+
 terra aoc.tonumber_u64(v: rawstring)
 	var res: uint64
 	C.sscanf(v, "%llu", &res)
 	return res
 end
 uint64.dump = function(self)
+	return tostring(self)
+end
+int64.dump = function(self)
 	return tostring(self)
 end
 -- stolen from https://doc.rust-lang.org/src/core/num/int_log10.rs.html
@@ -221,45 +234,52 @@ end
 
 -- Vectors and matrices
 
-struct aoc.Vector2 {
-	x: double
-	y: double
-}
-terra aoc.Vector2:add(rhs: aoc.Vector2)
-	return aoc.Vector2 { x = self.x + rhs.x, y = self.y + rhs.y }
-end
-terra aoc.Vector2:sub(rhs: aoc.Vector2)
-	return aoc.Vector2 { x = self.x - rhs.x, y = self.y - rhs.y }
-end
-terra aoc.Vector2:mul(a: double)
-	return aoc.Vector2 { x = self.x * a, y = self.y * a }
-end
-terra aoc.Vector2:neg()
-	return self:mul(-1)
-end
-terra aoc.Vector2:eq(rhs: aoc.Vector2)
-	return self.x == rhs.x and self.y == rhs.y
-end
-terra aoc.Vector2:rot_90()
-	return aoc.Vector2 { x = -self.y, y = self.x }
-end
-terra aoc.Vector2:rot_180()
-	return aoc.Vector2 { x = -self.x, y = -self.y }
-end
-terra aoc.Vector2:rot_270()
-	return aoc.Vector2 { x = self.y, y = -self.x }
-end
-aoc.Vector2.new = function(x, y)
-	local vec = terralib.new(aoc.Vector2)
-	vec.x = x
-	vec.y = y
-	return vec
-end
-aoc.Vector2.from_array = function(arr)
-	return aoc.Vector2.new(arr[1], arr[2])
-end
-aoc.Vector2.dump = function(self)
-	return self.x .. "," .. self.y
+function aoc.Vector2(T)
+	local struct Vector2 {
+		x: T
+		y: T
+	}
+	terra Vector2:add(rhs: Vector2)
+		return Vector2 { x = self.x + rhs.x, y = self.y + rhs.y }
+	end
+	terra Vector2:sub(rhs: Vector2)
+		return Vector2 { x = self.x - rhs.x, y = self.y - rhs.y }
+	end
+	terra Vector2:mul(a: double)
+		return Vector2 { x = self.x * a, y = self.y * a }
+	end
+	terra Vector2:dot(rhs: Vector2)
+		return self.x * rhs.x + self.y * rhs.y
+	end
+	terra Vector2:neg()
+		return self:mul(-1)
+	end
+	terra Vector2:eq(rhs: Vector2)
+		return self.x == rhs.x and self.y == rhs.y
+	end
+	terra Vector2:rot_90()
+		return Vector2 { x = -self.y, y = self.x }
+	end
+	terra Vector2:rot_180()
+		return Vector2 { x = -self.x, y = -self.y }
+	end
+	terra Vector2:rot_270()
+		return Vector2 { x = self.y, y = -self.x }
+	end
+	Vector2.new = function(x, y)
+		local vec = terralib.new(Vector2)
+		vec.x = x
+		vec.y = y
+		return vec
+	end
+	Vector2.from_array = function(arr)
+		return Vector2.new(arr[1], arr[2])
+	end
+	Vector2.dump = function(self)
+		return aoc.dump(self.x) .. "," .. aoc.dump(self.y)
+	end
+
+	return Vector2
 end
 
 -- Meta types
