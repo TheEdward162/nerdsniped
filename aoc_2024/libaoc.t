@@ -207,6 +207,18 @@ function aoc.flatten(tab)
 	return res
 end
 
+-- Set
+
+function aoc.set_insert(tab, val)
+	tab[aoc.dump(val)] = true
+end
+function aoc.set_remove(tab, val)
+	tab[aoc.dump(val)] = nil
+end
+function aoc.set_has(tab, val)
+	return tab[aoc.dump(val)] ~= nil
+end
+
 -- Vectors and matrices
 
 struct aoc.Vector2 {
@@ -230,6 +242,12 @@ terra aoc.Vector2:eq(rhs: aoc.Vector2)
 end
 terra aoc.Vector2:rot_90()
 	return aoc.Vector2 { x = -self.y, y = self.x }
+end
+terra aoc.Vector2:rot_180()
+	return aoc.Vector2 { x = -self.x, y = -self.y }
+end
+terra aoc.Vector2:rot_270()
+	return aoc.Vector2 { x = self.y, y = -self.x }
 end
 aoc.Vector2.new = function(x, y)
 	local vec = terralib.new(aoc.Vector2)
@@ -363,7 +381,7 @@ function aoc.dump(val, max_depth)
 	elseif type(val) == "number" then
 		res = res .. tostring(val)
 	elseif type(val) == "string" then
-		res = res .. string.format("%q", val)
+		res = res .. val
 	elseif type(val) == "boolean" then
 		res = res .. (res and "true" or "false")
 	elseif type(val) == "cdata" then
