@@ -1,5 +1,5 @@
 require("aoc_2024/libaoc")
-local Vector2 = aoc.Vector2
+local Vector2 = aoc.Vector2(double)
 local Matrix = aoc.Matrix
 local Cell = aoc.Enum("EMPTY", "OBSTACLE")
 

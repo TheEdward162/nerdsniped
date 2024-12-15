@@ -2,8 +2,8 @@ require("aoc_2024/libaoc")
 local Vector2 = aoc.Vector2(int32)
 local Matrix = aoc.Matrix
 
-local Cell = aoc.Enum2({"EMPTY", "."}, {"WALL", "#"}, {"CRATE", "O"}, {"CRATE_L", "["}, {"CRATE_R", "]"}, {"ROBOT", "@"})
-local Instruction = aoc.Enum2({"UP", "^"}, {"DOWN", "v"}, {"LEFT", "<"}, {"RIGHT", ">"})
+local Cell = aoc.Enum({"EMPTY", "."}, {"WALL", "#"}, {"CRATE", "O"}, {"CRATE_L", "["}, {"CRATE_R", "]"}, {"ROBOT", "@"})
+local Instruction = aoc.Enum({"UP", "^"}, {"DOWN", "v"}, {"LEFT", "<"}, {"RIGHT", ">"})
 
 local input_lines = aoc.read_lines(arg[1])
 local matrix_height = 0

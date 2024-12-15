@@ -1,6 +1,6 @@
 require("aoc_2024/libaoc")
 local ffi = require("ffi")
-local Vector2 = aoc.Vector2
+local Vector2 = aoc.Vector2(double)
 local Matrix = aoc.Matrix
 
 local input_lines = aoc.read_lines(arg[1])

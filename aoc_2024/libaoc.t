@@ -287,20 +287,6 @@ end
 function aoc.Enum(...)
 	local t = {}
 	local inverse = {}
-	for i, name in ipairs({...}) do
-		t[name] = i
-		inverse[i] = name
-	end
-	t["_inverse"] = inverse
-	t["dump"] = function(self)
-		return tostring(inverse[self])
-	end
-	return t
-end
-
-function aoc.Enum2(...)
-	local t = {}
-	local inverse = {}
 	local parse = {}
 	local parse_inverse = {}
 

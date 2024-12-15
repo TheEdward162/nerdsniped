@@ -1,5 +1,5 @@
 require("aoc_2024/libaoc")
-local Vector2 = aoc.Vector2
+local Vector2 = aoc.Vector2(double)
 
 -- table of rows
 local input_matrix = aoc.read_lines(arg[1])
