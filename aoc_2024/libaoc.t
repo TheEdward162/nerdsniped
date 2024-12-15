@@ -209,6 +209,12 @@ function aoc.sum(tab)
 		tab
 	)
 end
+function aoc.product(tab)
+	return aoc.fold(
+		function(acc, curr) return acc * curr end,
+		tab
+	)
+end
 
 function aoc.flatten(tab)
 	local res = {}
@@ -245,8 +251,11 @@ function aoc.Vector2(T)
 	terra Vector2:sub(rhs: Vector2)
 		return Vector2 { x = self.x - rhs.x, y = self.y - rhs.y }
 	end
-	terra Vector2:mul(a: double)
+	terra Vector2:mul(a: T)
 		return Vector2 { x = self.x * a, y = self.y * a }
+	end
+	terra Vector2:div(a: T)
+		return Vector2 { x = self.x / a, y = self.y / a }
 	end
 	terra Vector2:dot(rhs: Vector2)
 		return self.x * rhs.x + self.y * rhs.y
