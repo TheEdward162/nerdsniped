@@ -285,10 +285,56 @@ end
 -- Meta types
 
 function aoc.Enum(...)
-	local t = { type = int }
+	local t = {}
+	local inverse = {}
 	for i, name in ipairs({...}) do
 		t[name] = i
+		inverse[i] = name
 	end
+	t["_inverse"] = inverse
+	t["dump"] = function(self)
+		return tostring(inverse[self])
+	end
+	return t
+end
+
+function aoc.Enum2(...)
+	local t = {}
+	local inverse = {}
+	local parse = {}
+	local parse_inverse = {}
+
+	for i, variant in ipairs({...}) do
+		if type(variant) == "table" then
+			local name = variant[1]
+			local parse_char = variant[2]
+			t[name] = i
+			inverse[i] = name
+			parse[parse_char] = i
+			parse_inverse[i] = parse_char
+		else
+			local name = variant
+			t[name] = i
+			inverse[i] = name
+		end
+	end
+
+	-- t["_inverse"] = inverse
+	-- t["_parse"] = parse
+	-- t["dump"] = function(self)
+	-- 	return tostring(inverse[self])
+	-- end
+	t["try_parse"] = function(char, default)
+		local v = parse[char]
+		if v == nil then
+			v = default
+		end
+		return v
+	end
+	t["dump"] = function(self)
+		return tostring(parse_inverse[self])
+	end
+
 	return t
 end
 
@@ -354,7 +400,11 @@ local aoc_Matrix_prototype = {
 		end
 		return new_m
 	end,
-	dump = function(self)
+	dump = function(self, cell_dump_fn)
+		if cell_dump_fn == nil then
+			cell_dump_fn = aoc.dump
+		end
+		
 		local res = ""
 		for y = 1, self.height do
 			for x = 1, self.width do
@@ -362,7 +412,7 @@ local aoc_Matrix_prototype = {
 				if c == nil then
 					res = res .. "_"
 				else
-					res = res .. aoc.dump(c)
+					res = res .. cell_dump_fn(c)
 				end
 			end
 			res = res .. "\n"
