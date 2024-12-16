@@ -226,16 +226,36 @@ function aoc.flatten(tab)
 	return res
 end
 
--- Set
+-- Set and Map
+
+function aoc.map_insert(tab, key, val)
+	tab[aoc.dump(key)] = val
+end
+function aoc.map_remove(tab, key)
+	tab[aoc.dump(key)] = nil
+end
+function aoc.map_has(tab, key)
+	return tab[aoc.dump(key)] ~= nil
+end
+function aoc.map_get(tab, key)
+	return tab[aoc.dump(key)]
+end
+function aoc.map_get_default(tab, key, default)
+	local k = aoc.dump(key)
+	if tab[k] == nil then
+		tab[k] = default
+	end
+	return tab[k]
+end
 
 function aoc.set_insert(tab, val)
-	tab[aoc.dump(val)] = true
+	aoc.map_insert(tab, val, true)
 end
 function aoc.set_remove(tab, val)
-	tab[aoc.dump(val)] = nil
+	aoc.map_remove(tab, val)
 end
 function aoc.set_has(tab, val)
-	return tab[aoc.dump(val)] ~= nil
+	return aoc.map_has(tab, val)
 end
 
 -- Vectors and matrices
@@ -396,31 +416,43 @@ local aoc_Matrix_prototype = {
 		return new_m
 	end,
 	dump = function(self, cell_dump_fn)
-		if cell_dump_fn == nil then
-			cell_dump_fn = aoc.dump
-		end
-		
-		local res = ""
-		for y = 1, self.height do
-			for x = 1, self.width do
-				local c = self:get(x, y)
-				if c == nil then
-					res = res .. "_"
-				else
-					res = res .. cell_dump_fn(c)
-				end
-			end
-			res = res .. "\n"
-		end
-		return res
+		return aoc.Matrix.dump(self, cell_dump_fn)
 	end
 }
+aoc.Matrix.dump = function(self, cell_dump_fn)
+	if cell_dump_fn == nil then
+		cell_dump_fn = aoc.dump
+	end
+	
+	local res = ""
+	for y = 1, self.height do
+		for x = 1, self.width do
+			local c = self:get(x, y)
+			if c == nil then
+				res = res .. "_"
+			else
+				res = res .. cell_dump_fn(c)
+			end
+		end
+		res = res .. "\n"
+	end
+	return res
+end
 aoc.Matrix.new = function(width, height)
 	local m = { width=width, height=height, cells={} }
 	for k, v in pairs(aoc_Matrix_prototype) do
 		m[k] = v
 	end
 	return m
+end
+aoc.Matrix.iter = function(m)
+	return coroutine.wrap(function()
+		for y = 1, m.height do
+			for x = 1, m.width do
+				coroutine.yield(x, y, m:get(x, y))
+			end
+		end
+	end)
 end
 
 -- Debug
