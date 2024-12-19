@@ -108,7 +108,7 @@ local function print_state(map, robot_pos)
 end
 
 -- Part 1
-local map = map_start:shallow_copy()
+local map = map_start:copy_shallow()
 local robot_pos = robot_pos_start
 for _, inst in pairs(instructions) do
 	local dir = instruction_dir[inst]

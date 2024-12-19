@@ -73,7 +73,7 @@ local looping_maps = 0
 for y = 1, map.height do
 	for x = 1, map.width do
 		if map:get(x, y) == Cell.EMPTY then
-			local changed_map = map:shallow_copy()
+			local changed_map = map:copy_shallow()
 			changed_map:set(x, y, Cell.OBSTACLE)
 
 			if simulate_guard(changed_map, guard_start) == nil then

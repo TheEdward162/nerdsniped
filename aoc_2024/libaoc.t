@@ -168,6 +168,28 @@ end
 
 -- Arrays
 
+function aoc.append(tab, ...)
+	local copy = aoc.copy_shallow(tab)
+	for _, elem in pairs({...}) do
+		table.insert(copy, elem)
+	end
+	return copy
+end
+
+function aoc.contains(tab, needle, eq_fn)
+	if eq_fn == nil then
+		eq_fn = function(a, b) return a == b end
+	end
+	
+	for _, e in pairs(tab) do
+		if eq_fn(e, needle) then
+			return true
+
+		end
+	end
+	return false
+end
+
 function aoc.splice(tab, del_start, del_end)
 	local res = {}
 	for i, v in ipairs(tab) do
@@ -270,6 +292,9 @@ function aoc.Vector2(T)
 	end
 	terra Vector2:sub(rhs: Vector2)
 		return Vector2 { x = self.x - rhs.x, y = self.y - rhs.y }
+	end
+	terra Vector2:length()
+		return C.sqrt(self.x * self.x + self.y * self.y)
 	end
 	terra Vector2:mul(a: T)
 		return Vector2 { x = self.x * a, y = self.y * a }
@@ -406,7 +431,7 @@ local aoc_Matrix_prototype = {
 	set = function(self, x, y, v)
 		self.cells[self:index(x, y)] = v
 	end,
-	shallow_copy = function(self)
+	copy_shallow = function(self)
 		local new_m = aoc.Matrix.new(self.width, self.height)
 		for y = 1, self.height do
 			for x = 1, self.width do
@@ -440,9 +465,7 @@ aoc.Matrix.dump = function(self, cell_dump_fn)
 end
 aoc.Matrix.new = function(width, height)
 	local m = { width=width, height=height, cells={} }
-	for k, v in pairs(aoc_Matrix_prototype) do
-		m[k] = v
-	end
+	aoc.merge_into(m, aoc_Matrix_prototype)
 	return m
 end
 aoc.Matrix.iter = function(m)
@@ -453,6 +476,39 @@ aoc.Matrix.iter = function(m)
 			end
 		end
 	end)
+end
+
+-- The dumbest priority queue you've seen!
+aoc.PriorityQueue = {}
+local aoc_PriorityQueue_prototype = {
+	insert = function(self, elem)
+		table.insert(self.data, elem)
+	end,
+	pop = function(self)
+		if #self.data == 0 then
+			return nil
+		end
+
+		local min = 1
+		for i, elem in ipairs(self.data) do
+			if self.cmp_fn(elem, self.data[min]) < 0 then
+				min = i
+			end
+		end
+
+		return table.remove(self.data, min)
+	end,
+	len = function(self)
+		return #self.data
+	end,
+	dump = function(self)
+		return aoc.dump(self.data)
+	end
+}
+aoc.PriorityQueue.new = function(cmp_fn)
+	local pq = { cmp_fn = cmp_fn, data = {} }
+	aoc.merge_into(pq, aoc_PriorityQueue_prototype)
+	return pq
 end
 
 -- Debug

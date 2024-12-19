@@ -27,7 +27,7 @@ end
 -- print(aoc.dump(start_pos), aoc.dump(end_pos))
 
 local function print_state(map, best_tiles)
-	local copy = map:shallow_copy()
+	local copy = map:copy_shallow()
 	for _, t in pairs(best_tiles) do
 		copy:set(t.x, t.y, Cell.BEST)
 	end
