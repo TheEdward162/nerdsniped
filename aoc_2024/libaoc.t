@@ -269,6 +269,9 @@ function aoc.map_get_default(tab, key, default)
 	end
 	return tab[k]
 end
+function aoc.map_len(tab)
+	return #aoc.keys(tab)
+end
 
 function aoc.set_insert(tab, val)
 	aoc.map_insert(tab, val, true)
@@ -278,6 +281,9 @@ function aoc.set_remove(tab, val)
 end
 function aoc.set_has(tab, val)
 	return aoc.map_has(tab, val)
+end
+function aoc.set_len(tab)
+	return aoc.map_len(tab)
 end
 
 -- Vectors and matrices
@@ -295,6 +301,11 @@ function aoc.Vector2(T)
 	end
 	terra Vector2:length()
 		return C.sqrt(self.x * self.x + self.y * self.y)
+	end
+	terra Vector2:distance(rhs: Vector2)
+		var x = self.x - rhs.x
+		var y = self.y - rhs.y
+		return C.sqrt(x * x + y * y)
 	end
 	terra Vector2:mul(a: T)
 		return Vector2 { x = self.x * a, y = self.y * a }
@@ -334,48 +345,6 @@ function aoc.Vector2(T)
 	end
 
 	return Vector2
-end
-
--- Meta types
-
-function aoc.Enum(...)
-	local t = {}
-	local inverse = {}
-	local parse = {}
-	local parse_inverse = {}
-
-	for i, variant in ipairs({...}) do
-		if type(variant) == "table" then
-			local name = variant[1]
-			local parse_char = variant[2]
-			t[name] = i
-			inverse[i] = name
-			parse[parse_char] = i
-			parse_inverse[i] = parse_char
-		else
-			local name = variant
-			t[name] = i
-			inverse[i] = name
-		end
-	end
-
-	-- t["_inverse"] = inverse
-	-- t["_parse"] = parse
-	-- t["dump"] = function(self)
-	-- 	return tostring(inverse[self])
-	-- end
-	t["try_parse"] = function(char, default)
-		local v = parse[char]
-		if v == nil then
-			v = default
-		end
-		return v
-	end
-	t["dump"] = function(self)
-		return tostring(parse_inverse[self])
-	end
-
-	return t
 end
 
 --[[
@@ -477,6 +446,40 @@ aoc.Matrix.iter = function(m)
 		end
 	end)
 end
+--[[
+	trans_fn - function(head: { pos, state, cost }, next_pos): { cost, state } | nil
+	end_fn - function(head: { pos, state, cost }): bool
+]]--
+local aoc_find_2d_paths = function(Vector2, start, end_fn, trans_fn)
+	local DIRS_2D = { Vector2.new(1, 0), Vector2.new(-1, 0), Vector2.new(0, 1), Vector2.new(0, -1) }
+	
+	local heads = aoc.PriorityQueue.new(function(a, b)
+		return a.cost - b.cost
+	end)
+	heads:insert({ pos = start.pos, cost = 0, path = { start.pos }, state = start.state })
+
+	while heads:len() > 0 do
+		local head = heads:pop()
+
+		if end_fn(head) then
+			coroutine.yield({ path = head.path, cost = head.cost })
+		else
+			for _, dir in pairs(DIRS_2D) do
+				local next_pos = head.pos:add(dir)
+				local next_trans = trans_fn(head, next_pos)
+				if next_trans ~= nil then
+					local next_path = aoc.append(head.path, next_pos)
+					heads:insert(
+						{ pos = next_pos, cost = next_trans.cost, path = next_path, state = next_trans.state }
+					)
+				end
+			end
+		end
+	end
+end
+aoc.find_2d_paths = function(map, start, end_fn, trans_fn)
+	return coroutine.wrap(function() return aoc_find_2d_paths(map, start, end_fn, trans_fn) end)
+end
 
 -- The dumbest priority queue you've seen!
 aoc.PriorityQueue = {}
@@ -509,6 +512,48 @@ aoc.PriorityQueue.new = function(cmp_fn)
 	local pq = { cmp_fn = cmp_fn, data = {} }
 	aoc.merge_into(pq, aoc_PriorityQueue_prototype)
 	return pq
+end
+
+-- Meta types
+
+function aoc.Enum(...)
+	local t = {}
+	local inverse = {}
+	local parse = {}
+	local parse_inverse = {}
+
+	for i, variant in ipairs({...}) do
+		if type(variant) == "table" then
+			local name = variant[1]
+			local parse_char = variant[2]
+			t[name] = i
+			inverse[i] = name
+			parse[parse_char] = i
+			parse_inverse[i] = parse_char
+		else
+			local name = variant
+			t[name] = i
+			inverse[i] = name
+		end
+	end
+
+	-- t["_inverse"] = inverse
+	-- t["_parse"] = parse
+	-- t["dump"] = function(self)
+	-- 	return tostring(inverse[self])
+	-- end
+	t["try_parse"] = function(char, default)
+		local v = parse[char]
+		if v == nil then
+			v = default
+		end
+		return v
+	end
+	t["dump"] = function(self)
+		return tostring(parse_inverse[self])
+	end
+
+	return t
 end
 
 -- Debug

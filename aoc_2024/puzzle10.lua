@@ -18,48 +18,44 @@ for y, line in ipairs(input_lines) do
 	end
 end
 
-local DIRS = { { 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 } }
-local function find_trails(map, start)
-	local reached_end = {}
-	
-	local current_heads = {}
-	table.insert(current_heads, start)
-
-	while #current_heads > 0 do
-		local head = table.remove(current_heads)
-		local head_value = map:get(head.x, head.y)
-		for _, dir in pairs(DIRS) do
-			local next = head:add(dir)
-			local next_value = map:get(next.x, next.y)
-			if next_value ~= nil and next_value - head_value == 1 then
-				if next_value == 9 then
-					table.insert(reached_end, next)
-				else
-					table.insert(current_heads, next)
-				end
-			end
+local function find_trails(map, start_pos)
+	local function trans_fn(head, next_pos)
+		local head_cell = map:get(head.pos.x, head.pos.y)
+		local next_cell = map:get(next_pos.x, next_pos.y)
+		if next_cell ~= head_cell + 1 then
+			return nil
 		end
+
+		return {
+			cost = head.cost + 1,
+			state = nil
+		}
+	end
+	local function end_fn(head)
+		return map:get(head.pos.x, head.pos.y) == 9
 	end
 
-	return reached_end
-end
-
--- Part 1
-local reachable_sum = 0
-for _, start in pairs(trail_starts) do
-	local trails = find_trails(map, start)
-	local dedup_trails = {}
-	for _, v in pairs(trails) do
-		dedup_trails[aoc.dump(v)] = v
+	local gen = aoc.find_2d_paths(Vector2, { pos = start_pos, state = nil }, end_fn, trans_fn)
+	local trails = {}
+	for trail in gen do
+		table.insert(trails, trail)
 	end
-	reachable_sum = reachable_sum + #aoc.keys(dedup_trails)
+	return trails
 end
-print("reachable_sum", reachable_sum)
 
--- Part 2
-local reachable_ratings = 0
+-- Part 1 & Part 2
+local reachable_ends_sum = 0
+local total_trail_count = 0
 for _, start in pairs(trail_starts) do
 	local trails = find_trails(map, start)
-	reachable_ratings = reachable_ratings + #trails
+
+	local trail_ends = {}
+	for _, trail in pairs(trails) do
+		aoc.set_insert(trail_ends, trail.path[#trail.path])
+	end
+	reachable_ends_sum = reachable_ends_sum + aoc.set_len(trail_ends)
+
+	total_trail_count = total_trail_count + #trails
 end
-print("reachable_ratings", reachable_ratings)
+print("reachable_ends_sum", reachable_ends_sum)
+print("total_trail_count", total_trail_count)

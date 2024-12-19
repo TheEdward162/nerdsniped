@@ -41,41 +41,38 @@ local function print_path(map, path)
 	print(Matrix.dump(m, Cell.dump))
 end
 
-local DIRS = { Vector2.new(1, 0), Vector2.new(-1, 0), Vector2.new(0, 1), Vector2.new(0, -1) }
 local function find_min_path(map, start_pos, end_pos)
-	local heads = PriorityQueue.new(function(a, b)
-		return a.cost - b.cost
-	end)
-	heads:insert({ pos = start_pos, cost = 0, path = { start_pos } })
+	local seen_at_cost = {}
+	aoc.map_insert(seen_at_cost, start_pos, 0)
 
-	local seen_global = {}
-	aoc.map_insert(seen_global, start_pos, 0)
+	local function trans_fn(head, next_pos)
+		-- print_path(map, head.path)
 
-	while heads:len() > 0 do
-		local head = heads:pop()
-
-		if head.pos:eq(end_pos) then
-			return { path = head.path, cost = head.cost }
-		else
-			for _, dir in pairs(DIRS) do
-				local next_pos = head.pos:add(dir)
-				local next_cost = head.cost + 1
-				local visited_global = aoc.map_get(seen_global, next_pos)
-				if visited_global == nil or visited_global > next_cost then
-					aoc.map_insert(seen_global, next_pos, next_cost)
-					local next_cell = map:get(next_pos.x, next_pos.y)
-					if next_cell == Cell.EMPTY then
-						local next_path = aoc.append(head.path, next_pos)
-						heads:insert(
-							{ pos = next_pos, cost = next_cost, path = next_path }
-						)
-					end
-				end
-			end
+		local next_cell = map:get(next_pos.x, next_pos.y)
+		if next_cell ~= Cell.EMPTY then
+			return nil
 		end
+
+		local next_cost = head.cost + 1
+
+		local seen_cost = aoc.map_get(seen_at_cost, next_pos)
+		if seen_cost ~= nil and seen_cost <= next_cost then
+			return nil
+		end
+		aoc.map_insert(seen_at_cost, next_pos, next_cost)
+
+		return {
+			cost = next_cost,
+			state = nil
+		}
+	end
+	local function end_fn(head)
+		return head.pos:eq(end_pos)
 	end
 
-	return nil
+	local gen = aoc.find_2d_paths(Vector2, { pos = start_pos, state = nil }, end_fn, trans_fn)
+	local min_path = gen()
+	return min_path
 end
 
 -- Part 1
@@ -84,11 +81,11 @@ for i = 1, fallen_bytes_count do
 	local byte_pos = falling_bytes[i]
 	map_fallen:set(byte_pos.x, byte_pos.y, Cell.WALL)
 end
-print(Matrix.dump(map_fallen, Cell.dump))
+-- print(Matrix.dump(map_fallen, Cell.dump))
 
 local best_path = find_min_path(map_fallen, start_pos, end_pos)
 print("best path", best_path.cost)
-print_path(map_fallen, best_path.path)
+-- print_path(map_fallen, best_path.path)
 
 -- Part 2
 local final_byte_index = nil
@@ -101,7 +98,7 @@ for i = fallen_bytes_count + 1, #falling_bytes do
 			final_byte_index = i
 			break
 		end
-		print_path(map_fallen, best_path.path)
+		-- print_path(map_fallen, best_path.path)
 	end
 end
 print("final_byte", final_byte_index, aoc.dump(falling_bytes[final_byte_index]:sub(Vector2.new(1, 1))))

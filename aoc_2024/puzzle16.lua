@@ -37,68 +37,64 @@ end
 local function seen_key(pos, dir)
 	return aoc.dump(pos) .. ";" .. aoc.dump(dir)
 end
-local function attempt_move(map, seen_tiles, heads, next_pos, next_dir, next_cost, next_prev)
-	if map:get(next_pos.x, next_pos.y) == Cell.EMPTY then
-		local next_seen_tile = aoc.map_get_default(seen_tiles, next_pos, {})
-		local next_seen = aoc.map_get(next_seen_tile, next_dir)
-		if next_seen == nil or next_seen.cost > next_cost then
-			table.insert(heads, { pos = next_pos, dir = next_dir, cost = next_cost })
-			aoc.map_insert(next_seen_tile, next_dir, { cost = next_cost, prev = next_prev })
-		elseif next_seen.cost == next_cost then
-			for _, e in pairs(next_prev) do
-				table.insert(next_seen.prev, e)
-			end
+local function find_min_paths(map, start_pos, end_pos)
+	local start_dir = Vector2.new(1, 0)
+	
+	local seen_at_cost = {}
+	aoc.map_insert(seen_at_cost, seen_key(start_pos, start_dir), 0)
+	
+	local function trans_fn(head, next_pos)
+		-- print_state(map, head.path)
+
+		local next_cell = map:get(next_pos.x, next_pos.y)
+		if next_cell ~= Cell.EMPTY then
+			return nil
 		end
+
+		local next_cost = head.cost + 1
+		local next_dir = next_pos:sub(head.pos)
+		if next_dir:eq(head.state:rot_180()) then
+			next_cost = next_cost + 2000
+		elseif not head.state:eq(next_dir) then
+			next_cost = next_cost + 1000
+		end
+
+		local next_seen_key = seen_key(next_pos, next_dir)
+		local seen_cost = aoc.map_get(seen_at_cost, next_seen_key)
+		if seen_cost ~= nil and seen_cost < next_cost then
+			return nil
+		end
+		aoc.map_insert(seen_at_cost, next_seen_key, next_cost)
+
+		return {
+			cost = next_cost,
+			state = next_dir
+		}
 	end
-end
-
--- Part 1
-local cost_move = 1
-local cost_turn = 1000
-local start_dir = Vector2.new(1, 0)
-
-local heads = { { pos = start_pos, dir = start_dir, cost = 0 } }
-local seen_tiles = {}
-aoc.map_insert(seen_tiles, start_pos, { [aoc.dump(start_dir)] = { cost = 0, prev = {} } })
-while #heads > 0 do
-	local head = table.remove(heads)
-
-	-- attempt a move
-	attempt_move(map, seen_tiles, heads, head.pos:add(head.dir), head.dir, head.cost + cost_move, { head.pos })
-
-	-- attempt rotate
-	local next_prev = aoc.values(aoc.map_get(aoc.map_get(seen_tiles, head.pos), head.dir).prev)
-	attempt_move(map, seen_tiles, heads, head.pos, head.dir:rot_90(), head.cost + cost_turn, next_prev)
-	attempt_move(map, seen_tiles, heads, head.pos, head.dir:rot_270(), head.cost + cost_turn, next_prev)
-end
-
-local ends = aoc.map_get(seen_tiles, end_pos)
-local best_ends = {}
-for _, seen in pairs(ends) do
-	if #best_ends == 0 or best_ends[1].cost > seen.cost then
-		best_ends = { seen }
-	elseif best_ends[1].cost == seen.cost then
-		table.insert(best_ends, seen)
+	local function end_fn(head)
+		return head.pos:eq(end_pos)
 	end
+
+	local gen = aoc.find_2d_paths(Vector2, { pos = start_pos, state = start_dir }, end_fn, trans_fn)
+	local min_paths = { gen() }
+	for min_path in gen do
+		if min_path.cost > min_paths[1].cost then
+			break
+		end
+		table.insert(min_paths, min_path)
+		-- print_state(map, min_path.path)
+	end
+	return min_paths
 end
-print("min score", best_ends[1].cost)
+local min_paths = find_min_paths(map, start_pos, end_pos)
+print("min score", min_paths[1].cost)
 
 -- Part 2
 local seen_best_path = {}
 aoc.map_insert(seen_best_path, end_pos, end_pos)
-local tails = {}
-for _, best_end in pairs(best_ends) do
-	for _, prev in pairs(best_end.prev) do
-		table.insert(tails, { pos = prev, dir = end_pos:sub(prev) })
-	end
-end
-while #tails > 0 do
-	local tail = table.remove(tails)
-	aoc.map_insert(seen_best_path, tail.pos, tail.pos)
-	local tail_prev = aoc.map_get(aoc.map_get(seen_tiles, tail.pos), tail.dir).prev
-
-	for _, prev in pairs(tail_prev) do
-		table.insert(tails, { pos = prev, dir = tail.pos:sub(prev) })
+for _, min_path in pairs(min_paths) do
+	for _, pos in pairs(min_path.path) do
+		aoc.map_insert(seen_best_path, pos, pos)
 	end
 end
 -- print_state(map, aoc.values(seen_best_path))
