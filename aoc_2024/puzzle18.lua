@@ -1,7 +1,6 @@
 require("aoc_2024/libaoc")
 local Vector2 = aoc.Vector2(int32)
 local Matrix = aoc.Matrix
-local PriorityQueue = aoc.PriorityQueue
 
 local Cell = aoc.Enum({"EMPTY", "."}, {"WALL", "#"}, {"PATH", "O"})
 

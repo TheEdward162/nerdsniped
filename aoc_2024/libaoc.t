@@ -1,5 +1,6 @@
 local C = terralib.includecstring [[
-    #include<stdio.h>
+    #include<stdlib.h>
+	#include<stdio.h>
 	#include<math.h>
 ]]
 
@@ -176,18 +177,21 @@ function aoc.append(tab, ...)
 	return copy
 end
 
-function aoc.contains(tab, needle, eq_fn)
+function aoc.index_of(tab, needle, eq_fn)
 	if eq_fn == nil then
 		eq_fn = function(a, b) return a == b end
 	end
 	
-	for _, e in pairs(tab) do
+	for i, e in ipairs(tab) do
 		if eq_fn(e, needle) then
-			return true
+			return i
 
 		end
 	end
-	return false
+	return nil
+end
+function aoc.contains(tab, needle, eq_fn)
+	return aoc.index_of(tab, needle, eq_fn) ~= nil
 end
 
 function aoc.splice(tab, del_start, del_end)
@@ -301,6 +305,9 @@ function aoc.Vector2(T)
 	end
 	terra Vector2:length()
 		return C.sqrt(self.x * self.x + self.y * self.y)
+	end
+	terra Vector2:length_manhattan()
+		return C.abs(self.x) + C.abs(self.y)
 	end
 	terra Vector2:distance(rhs: Vector2)
 		var x = self.x - rhs.x
@@ -447,8 +454,8 @@ aoc.Matrix.iter = function(m)
 	end)
 end
 --[[
-	trans_fn - function(head: { pos, state, cost }, next_pos): { cost, state } | nil
-	end_fn - function(head: { pos, state, cost }): bool
+	trans_fn - function(head: { pos, state, cost, path }, next_pos): { cost, state } | nil
+	end_fn - function(head: { pos, state, cost, path }): bool
 ]]--
 local aoc_find_2d_paths = function(Vector2, start, end_fn, trans_fn)
 	local DIRS_2D = { Vector2.new(1, 0), Vector2.new(-1, 0), Vector2.new(0, 1), Vector2.new(0, -1) }
