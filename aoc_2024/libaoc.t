@@ -169,6 +169,28 @@ end
 
 -- Arrays
 
+function aoc.iter(tab)
+	return coroutine.wrap(function()
+		for _, e in pairs(tab) do
+			coroutine.yield(e)
+		end
+	end)
+end
+function aoc.iter_count(iter)
+	local res = 0
+	for _ in iter do
+		res = res + 1
+	end
+	return res
+end
+
+function aoc.collect(iter)
+	local res = {}
+	for e in iter do
+		table.insert(res, e)
+	end
+	return res
+end
 function aoc.append(tab, ...)
 	local copy = aoc.copy_shallow(tab)
 	for _, elem in pairs({...}) do
