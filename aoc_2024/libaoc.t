@@ -52,6 +52,11 @@ terra aoc.tonumber_u64(v: rawstring)
 	C.sscanf(v, "%llu", &res)
 	return res
 end
+terra aoc.tonumber_i64(v: rawstring)
+	var res: int64
+	C.sscanf(v, "%lld", &res)
+	return res
+end
 uint64.dump = function(self)
 	return tostring(self)
 end
@@ -182,6 +187,18 @@ function aoc.iter_count(iter)
 		res = res + 1
 	end
 	return res
+end
+
+function aoc.windows(tab, size)
+	return coroutine.wrap(function()
+		for i = size, #tab do
+			local window = {}
+			for wi = i - size + 1, i do
+				table.insert(window, tab[wi])
+			end
+			coroutine.yield(window, i)
+		end
+	end)
 end
 
 function aoc.collect(iter)
