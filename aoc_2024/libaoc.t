@@ -208,6 +208,16 @@ function aoc.collect(iter)
 	end
 	return res
 end
+function aoc.join(sep, array)
+	local res = ""
+	for _, v in pairs(array) do
+		if #res ~= 0 then
+			res = res .. sep
+		end
+		res = res .. v
+	end
+	return res
+end
 function aoc.append(tab, ...)
 	local copy = aoc.copy_shallow(tab)
 	for _, elem in pairs({...}) do
@@ -291,13 +301,51 @@ function aoc.flatten(tab)
 	return res
 end
 
+-- local function aoc_permutations_impl(tab, start)
+-- 	if start == #tab then
+--         coroutine.yield({unpack(tab)})
+--     else
+--         for i = start, #tab do
+-- 			tab[start], tab[i] = tab[i], tab[start]
+--             aoc_permutations_impl(tab, start + 1)
+-- 			tab[start], tab[i] = tab[i], tab[start]
+--         end
+--     end
+-- end
+-- function aoc.permutations(tab)
+-- 	return coroutine.wrap(function()
+-- 		aoc_permutations_impl(tab, 1)
+-- 	end)
+-- end
+
+local function aoc_combinations_impl(tab, n, start, current)
+    if #current == n then
+        coroutine.yield({unpack(current)})
+        return
+    end
+
+    for i = start, #tab do
+        table.insert(current, tab[i])
+        aoc_combinations_impl(tab, n, i + 1, current)
+        table.remove(current)
+    end
+end
+function aoc.combinations(tab, n)
+	return coroutine.wrap(function()
+		aoc_combinations_impl(tab, n, 1, {})
+	end)
+end
+
 -- Set and Map
 
 function aoc.map_insert(tab, key, val)
 	tab[aoc.dump(key)] = val
 end
 function aoc.map_remove(tab, key)
-	tab[aoc.dump(key)] = nil
+	local k = aoc.dump(key)
+	local val = tab[k]
+	tab[k] = nil
+	return val
 end
 function aoc.map_has(tab, key)
 	return tab[aoc.dump(key)] ~= nil
@@ -315,18 +363,51 @@ end
 function aoc.map_len(tab)
 	return #aoc.keys(tab)
 end
+function aoc.map_values(tab)
+	return aoc.values(tab)
+end
 
 function aoc.set_insert(tab, val)
-	aoc.map_insert(tab, val, true)
+	aoc.map_insert(tab, val, val)
 end
 function aoc.set_remove(tab, val)
-	aoc.map_remove(tab, val)
+	return aoc.map_remove(tab, val)
 end
 function aoc.set_has(tab, val)
 	return aoc.map_has(tab, val)
 end
 function aoc.set_len(tab)
 	return aoc.map_len(tab)
+end
+function aoc.set_values(tab)
+	return aoc.values(tab)
+end
+function aoc.set_from_array(tab)
+	local res = {}
+	for e in aoc.iter(tab) do
+		aoc.set_insert(res, e)
+	end
+	return res
+end
+function aoc.set_iter(tab)
+	return coroutine.wrap(function()
+		for _, v in pairs(tab) do
+			coroutine.yield(v)
+		end
+	end)
+end
+function aoc.set_pop(tab)
+	local key, _ = next(tab, nil)
+	return aoc.set_remove(tab, key)
+end
+function aoc.set_intersect(a, b)
+	local res = {}
+	for val in aoc.set_iter(a) do
+		if aoc.set_has(b, val) then
+			aoc.set_insert(res, val)
+		end
+	end
+	return res
 end
 
 -- Vectors and matrices
@@ -478,9 +559,18 @@ aoc.Matrix.dump = function(self, cell_dump_fn)
 	end
 	return res
 end
-aoc.Matrix.new = function(width, height)
+aoc.Matrix.new = function(width, height, fill)
 	local m = { width=width, height=height, cells={} }
 	aoc.merge_into(m, aoc_Matrix_prototype)
+
+	if fill ~= nil then
+		for y = 1, height do
+			for x = 1, width do
+				m:set(x, y, fill)
+			end
+		end
+	end
+
 	return m
 end
 aoc.Matrix.iter = function(m)
