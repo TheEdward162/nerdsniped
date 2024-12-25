@@ -328,11 +328,19 @@ function aoc.flatten(tab)
 	return res
 end
 
-function aoc.zip(a, b)
-	local len = math.min(#a, #b)
+function aoc.zip(...)
+	local tabs = {...}
+	local len = aoc.min(aoc.map(
+		table.getn,
+		tabs
+	))
 	local res = {}
 	for i = 1, len do
-		table.insert(res, { a[i], b[i] })
+		local tuple = {}
+		for t in aoc.iter(tabs) do
+			table.insert(tuple, t[i])
+		end
+		table.insert(res, tuple)
 	end
 	return res
 end

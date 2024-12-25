@@ -6,7 +6,7 @@ local WireLevel = aoc.Enum("OFF", "ON", "UNDEF")
 local input_lines = aoc.iter(aoc.read_lines(arg[1]))
 
 local wires = {}
-local gates = {}
+local input_gates = {}
 
 for line in input_lines do
 	if line == "" then
@@ -31,7 +31,7 @@ for line in input_lines do
 	end
 
 	aoc.map_insert(wires, output, WireLevel.UNDEF)
-	table.insert(gates, { op = op, left = left, right = right, output = output })
+	table.insert(input_gates, { op = op, left = left, right = right, output = output })
 end
 
 --[[
@@ -92,7 +92,7 @@ local function sort_gates(wires, gates)
 	return sorted_gates
 end
 
-gates = sort_gates(wires, gates)
+local gates = sort_gates(wires, input_gates)
 -- print(aoc.dump(wires))
 -- print(aoc.dump(gates))
 
@@ -218,41 +218,48 @@ local function find_gate(gates, output)
 			return gate, i
 		end
 	end
+	return nil
 end
 local function swap_gates(wires, gates, a, b)
+	local gate_a, gate_a_i = find_gate(gates, a)
+	local gate_b, gate_b_i = find_gate(gates, b)
+	
+	local gate_a_copy = aoc.copy_shallow(gate_a)
+	local gate_b_copy = aoc.copy_shallow(gate_b)
+	gate_a_copy.output = gate_b.output
+	gate_b_copy.output = gate_a.output
+	
 	local gates_copy = aoc.copy_shallow(gates)
-	local gate_a = find_gate(gates_copy, a)
-	local gate_b = find_gate(gates_copy, b)
-
-	local tmp = gate_a.output
-	gate_a.output = gate_b.output
-	gate_b.output = tmp
+	gates_copy[gate_a_i] = gate_a_copy
+	gates_copy[gate_b_i] = gate_b_copy
 
 	sort_gates(wires, gates_copy)
 	return gates_copy
 end
 
-local function dump_gate(wires, gates, gate, depth)
+local function dump_gate(gates, gate, depth)
+	local gate_left = find_gate(gates, gate.left)
 	local dump_left = nil
-	if aoc.map_get(wires, gate.left) ~= WireLevel.UNDEF or depth == 0 then
+	if gate_left == nil or depth == 0 then
 		dump_left = gate.left
 	else
-		dump_left = "[" .. gate.left .. "]" .. "(" .. dump_gate(wires, gates, find_gate(gates, gate.left), depth - 1) .. ")"
+		dump_left = "[" .. gate.left .. "]" .. "(" .. dump_gate(gates, gate_left, depth - 1) .. ")"
 	end
 
+	local gate_right = find_gate(gates, gate.right)
 	local dump_right = nil
-	if aoc.map_get(wires, gate.right) ~= WireLevel.UNDEF or depth == 0 then
+	if gate_right == nil or depth == 0 then
 		dump_right = gate.right
 	else
-		dump_right = "[" .. gate.right .. "]" .. "(" .. dump_gate(wires, gates, find_gate(gates, gate.right), depth - 1) .. ")"
+		dump_right = "[" .. gate.right .. "]" .. "(" .. dump_gate(gates, gate_right, depth - 1) .. ")"
 	end
 
 	return dump_left .. " " .. Op.dump(gate.op) .. " " .. dump_right
 end
-local function print_gates(wires, gates, wires_z)
+local function print_gates(gates, wires_z)
 	for wire in aoc.iter(wires_z) do
 		local g = find_gate(gates, wire)
-		print(wire .. " = " .. dump_gate(wires, gates, g, 100))
+		print(wire .. " = " .. dump_gate(gates, g, 100))
 	end
 end
 
@@ -274,7 +281,6 @@ local function dump_gate_graphviz(gates)
 	dot = dot .. "}"
 	print(dot)
 end
-
 
 if #wires_x ~= #wires_y then
 	error("assertion failed - inputs are the same bit length")
@@ -304,6 +310,7 @@ local function find_wrong_bits(wires, gates, input_bits, simulator)
 end
 
 -- solved manually
+--[[
 local swaps = {
 	{ "z05", "jst" },
 	{ "gdf", "mcm" },
@@ -314,12 +321,131 @@ for swap in aoc.iter(swaps) do
 	gates = swap_gates(wires, gates, swap[1], swap[2])
 end
 
-print_gates(wires, gates, wires_z)
-dump_gate_graphviz(gates)
-print(aoc.dump(
-	find_wrong_bits(wires, gates, bit_length, make_simulator(wires, gates))
-))
+-- print_gates(wires, gates, wires_z)
+-- dump_gate_graphviz(gates)
+-- print(aoc.dump(
+-- 	find_wrong_bits(wires, gates, bit_length, make_simulator(wires, gates))
+-- ))
 
 local answer = aoc.flatten(swaps)
+table.sort(answer)
+print(aoc.join(",", answer))
+]]--
+
+-- Part 2
+local function create_pattern_full_adder(left, right, output, prev_pattern)
+	local input_and = { op = Op.AND, inputs = { left, right } }
+	if prev_pattern == nil then
+		--[[
+			z00 = x00 XOR y00
+			z01 = <next> XOR (x00 AND y00)
+		]]--
+		return {
+			op = Op.XOR,
+			inputs = { left, right },
+			output = output
+		}, input_and
+	end
+
+	--[[
+		z01 = (x01 XOR y01) XOR <prev>
+		z02 = <next> XOR ((x01 AND y01) OR ((x01 XOR y01) AND <prev>))
+	]]--
+	local inner_xor = { op = Op.XOR, inputs = { left, right } }
+	return {
+		op = Op.XOR, output = output, inputs = {
+			inner_xor,
+			prev_pattern
+		}
+	}, { op = Op.OR, inputs = {
+		input_and,
+		{ op = Op.AND, inputs = { inner_xor, prev_pattern } }
+	} }
+end
+
+local function match_pattern(gates, gate, pattern)
+	-- outputs match
+	if pattern.output ~= nil and gate.output ~= pattern.output then
+		return false, gate
+	end
+
+	-- operations match
+	if gate.op ~= pattern.op then
+		return false, gate
+	end
+
+	local function match_input(input, pattern)
+		local input_gate = find_gate(gates, input)
+
+		if type(pattern) == "string" then
+			if input == pattern then
+				return true, nil
+			end
+			return false, input
+		else
+			if input_gate == nil then
+				return false, input
+			end
+
+			local pat_match, pat_err = match_pattern(gates, input_gate, pattern)
+			-- print(input, aoc.dump(input_gate), pat_match, aoc.dump(pat_err))
+			if pat_match then
+				return true, nil
+			end
+			return false, pat_err
+		end
+	end
+	-- inputs match
+	local lm1, le1 = match_input(gate.left, pattern.inputs[1])
+	local rm1, re1 = match_input(gate.right, pattern.inputs[2])
+	-- in case one matches and the other one doesn't we know which one is faulty
+	-- in case neither matches we try it the other way around
+	if lm1 or rm1 then
+		if not lm1 then
+			return false, le1
+		end
+		if not rm1 then
+			return false, re1
+		end
+	else
+		local lm2, le2 = match_input(gate.left, pattern.inputs[2])
+		local rm2, re2 = match_input(gate.right, pattern.inputs[1])
+		-- in case neither matches here ??
+		if not lm2 and not rm2 then
+			-- print("TODO: which error?")
+		end
+		if not lm2 then
+			return false, le2
+		end
+		if not rm2 then
+			return false, re2
+		end
+	end
+
+	return true, nil
+end
+
+local swaps = {}
+local patterns_z_prev = nil
+-- TODO: last wire of z
+for wires in aoc.iter(aoc.zip(wires_x, wires_y, wires_z)) do
+	local pattern, prev = create_pattern_full_adder(wires[1], wires[2], wires[3], patterns_z_prev)
+	patterns_z_prev = prev
+	
+	local gate = find_gate(input_gates, wires[3])
+	local match, match_err = match_pattern(input_gates, gate, pattern)
+
+	if match_err ~= nil then
+		aoc.set_insert(swaps, match_err.output)
+	end
+
+	-- print(gate.output .. " = " .. dump_gate(input_gates, gate, 3))
+	-- print(aoc.dump(pattern))
+	-- print(match, aoc.dump(match_err))
+	-- print()
+end
+-- print(aoc.dump(swaps))
+
+local answer = aoc.set_values(swaps)
 table.sort(answer)
 print(aoc.join(",", answer))
