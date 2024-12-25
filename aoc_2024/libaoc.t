@@ -27,9 +27,21 @@ end
 
 function aoc.string_split(delim, str)
 	local res = {}
-	for sub_str in string.gmatch(str, "([^" ..delim .. "]+)") do
-		table.insert(res, sub_str)
+
+	local last_start = 1
+	while true do
+		local next_start, next_end = string.find(str, delim, last_start, true)
+		if next_start == nil then
+			break
+		end
+
+		table.insert(res, str:sub(last_start, next_start - 1))
+		last_start = next_end + 1
 	end
+	if last_start <= #str then
+		table.insert(res, str:sub(last_start, #str))
+	end
+
 	return res
 end
 
@@ -225,6 +237,13 @@ function aoc.append(tab, ...)
 	end
 	return copy
 end
+function aoc.concat(a, b)
+	local copy = aoc.copy_shallow(a)
+	for elem in aoc.iter(b) do
+		table.insert(copy, elem)
+	end
+	return copy
+end
 
 function aoc.index_of(tab, needle, eq_fn)
 	if eq_fn == nil then
@@ -353,7 +372,7 @@ end
 function aoc.map_get(tab, key)
 	return tab[aoc.dump(key)]
 end
-function aoc.map_get_default(tab, key, default)
+function aoc.map_ensure(tab, key, default)
 	local k = aoc.dump(key)
 	if tab[k] == nil then
 		tab[k] = default
@@ -659,27 +678,24 @@ function aoc.Enum(...)
 	local parse_inverse = {}
 
 	for i, variant in ipairs({...}) do
+		local name = nil
+		local parse_str = nil
 		if type(variant) == "table" then
-			local name = variant[1]
-			local parse_char = variant[2]
-			t[name] = i
-			inverse[i] = name
-			parse[parse_char] = i
-			parse_inverse[i] = parse_char
+			name = variant[1]
+			parse_str = variant[2]
 		else
-			local name = variant
-			t[name] = i
-			inverse[i] = name
+			name = variant
+			parse_str = variant
 		end
+
+		t[name] = i
+		inverse[i] = name
+		parse[parse_str] = i
+		parse_inverse[i] = parse_str
 	end
 
-	-- t["_inverse"] = inverse
-	-- t["_parse"] = parse
-	-- t["dump"] = function(self)
-	-- 	return tostring(inverse[self])
-	-- end
-	t["try_parse"] = function(char, default)
-		local v = parse[char]
+	t["try_parse"] = function(str, default)
+		local v = parse[str]
 		if v == nil then
 			v = default
 		end
