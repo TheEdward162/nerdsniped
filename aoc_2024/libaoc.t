@@ -309,6 +309,14 @@ function aoc.product(tab)
 		tab
 	)
 end
+function aoc.all(f, tab)
+	for elem in aoc.iter(tab) do
+		if f(elem) == false then
+			return false
+		end
+	end
+	return true
+end
 
 function aoc.flatten(tab)
 	local res = {}
@@ -316,6 +324,15 @@ function aoc.flatten(tab)
 		for _, inner in pairs(v) do
 			table.insert(res, inner)
 		end
+	end
+	return res
+end
+
+function aoc.zip(a, b)
+	local len = math.min(#a, #b)
+	local res = {}
+	for i = 1, len do
+		table.insert(res, { a[i], b[i] })
 	end
 	return res
 end
